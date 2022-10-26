@@ -19,6 +19,35 @@ export const useStyles = createUseStyles(theme => {
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
+    },
+    bottomTools: {
+      display: 'flex',
+      justifyContent: 'center',
+    },
+    slider: {
+      width: 200,
+      height: 30,
+      backgroundColor: theme.colors.paper,
+      padding: '10px 20px',
+      borderRadius: 8,
+    },
+    colorPicker: {
+      borderRadius: '8px!important',
+      border: '0!important',
+      padding: '0!important',
+      opacity: '1!important',
+      '& input': {
+        display: 'none',
+      },
+      '& > div': {
+        zIndex: 200,
+      },
+      '&:before': {
+        backgroundColor: theme.colors.paper
+      },
+      '&:after': {
+        backgroundColor: theme.colors.paper
+      }
     }
   }
 });

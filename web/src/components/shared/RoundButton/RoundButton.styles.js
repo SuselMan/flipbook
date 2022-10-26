@@ -3,6 +3,7 @@ import { createUseStyles } from 'react-jss';
 export const useStyles = createUseStyles(theme => {
   return {
     button: {
+      position: 'relative',
       margin: 32,
       cursor: 'pointer',
       backgroundColor: theme.colors.mainBackground,
@@ -11,22 +12,31 @@ export const useStyles = createUseStyles(theme => {
       borderRadius: '24px',
       color: theme.colors.mainText,
       fontSize: '1.5em',
-      //TODO: use all colores from theme here
-      boxShadow:  '13px 13px 26px #dddfe2, -13px -13px 26px #f9fbfe',
+      boxShadow:  `13px 13px 26px ${theme.colors.dropShadowDark}, -13px -13px 26px ${theme.colors.dropShadowLight}`,
       border: 'none',
 
       '&:hover': {
         fontSize: '1.5em',
-        transform: 'rotate(360deg)',
+        transform: 'scale(1.05)'
       },
       '&:active': {
         outline: 'none',
         fontSize: '1.5em',
-        transition: 'none',
+        boxShadow:  `13px 13px 26px ${theme.colors.dropShadowLight}, -13px -13px 26px ${theme.colors.dropShadowDark}`,
       },
       '&:focus': {
         outline: 'none'
       },
+      '&.pressed': {
+        boxShadow:  `13px 13px 26px ${theme.colors.dropShadowLight}, -13px -13px 26px ${theme.colors.dropShadowDark}`,
+      },
+      '&>*': {
+        width: 20,
+        height: 20,
+      },
+      transition: 'box-shadow 0.5s'
+    },
+    withIcon: {
       '&>*': {
         width: 20,
         height: 20,

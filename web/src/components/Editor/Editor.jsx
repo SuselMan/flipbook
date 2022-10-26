@@ -1,144 +1,302 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useStyles } from './Editor.styles';
-import Konva from 'konva';
 import RoundButton from '../shared/RoundButton/RoundButton';
 import {ReactComponent as TrashIcon} from '../../shared/icons/trash.svg';
 import {ReactComponent as SaveIcon} from '../../shared/icons/save.svg';
 import {ReactComponent as ColorIcon} from '../../shared/icons/color.svg';
 import {ReactComponent as PenIcon} from '../../shared/icons/pen.svg';
 import {ReactComponent as EraserIcon} from '../../shared/icons/eraser.svg';
+import {ReactComponent as PlayIcon} from '../../shared/icons/play.svg';
+import {ReactComponent as PauseIcon} from '../../shared/icons/pause.svg';
+import {ReactComponent as DuplicateIcon} from '../../shared/icons/duplicate.svg';
+import {ReactComponent as MultipleIcon} from '../../shared/icons/multiple.svg';
+import {ReactComponent as ClearIcon} from '../../shared/icons/clear.svg';
+import {ReactComponent as BrushSizeIcon} from '../../shared/icons/brush-size.svg';
+import {ReactComponent as OpacityIcon} from '../../shared/icons/opacity.svg';
+import {ReactComponent as UndoIcon} from '../../shared/icons/undo.svg';
+import {ReactComponent as RedoIcon} from '../../shared/icons/redo.svg';
+import { stringNames, getString } from '../../configs/strings';
+import { TOOLS } from './Editor.constants';
 import Frames from './Frames/Frames';
-import * as uuid from 'uuid';
+import Canvas from "./Canvas/Canvas";
+import { BlockPicker } from 'react-color';
+import Tooltip from '@mui/material/Tooltip';
+import ClickAwayListener from '@mui/material/ClickAwayListener';
+import Slider from '@mui/material/Slider';
 
 const Editor = () => {
   const classes = useStyles();
-  const steps = [];
-  const [frames, setFrames]= useState([  btoa(uuid.v4()), ]);
-  console.log('btoa(uuid.v4())', btoa(uuid.v4()));
+  const framesRef = useRef();
+  const canvasRef = useRef();
+  const [isPlay, setIsPlay] = useState(false);
+  const [ isMultiple, setIsMultiple ] = useState(false);
+  const [tool, setTool] = useState(TOOLS.BRUSH)
+  const [currentColor, setCurrentColor] = useState('#000');
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  const [isBrushTooltipOpen, setIsBrushTooltipOpen] = useState(false);
+  const [isOpacityTooltipOpen, setIsOpacityTooltipOpen] = useState(false);
+  const [brushSize, setBrushSize] = useState(5);
+  const [opacity, setOpacity] = useState(1);
 
-    useEffect(() => {
+  const updateFrames = (dataUrl) => {
+    framesRef.current.updateFrames(dataUrl);
+  }
 
-      const undo = (evt) => {
-        if (evt.ctrlKey) {
-          if(evt.key === 'z') {
-            if(steps.length <= 1) {
-              alert('Nothing to undo');
-              return;
-            }
-            steps.pop();
-            console.log('undo', steps[steps.length - 1]);
-            const img = new Image;
-            img.onload = () => {
-              context.fillStyle = "#FFF";
-              context.fillRect(0, 0, 1024, 600);
-              context.drawImage(img,0,0); // Or at whatever offset you like
-              layer.batchDraw();
-            };
-            img.src = steps[steps.length - 1];
-          }
-        }
-      }
+  const addFrame = (dataUrl) => {
+    framesRef.current.addFrame(dataUrl);
+  }
 
-      document.addEventListener('keyup', undo);
+  const deleteFrame = () => {
+    framesRef.current.deleteFrame();
+  }
 
-      console.log('conva', Konva);
-      console.log('container', document.querySelector('#container'));
-      const stage = new Konva.Stage({
-        container: 'drawContainer',
-        width: 1024,
-        height: 600
-      });
+  const setCurrentFrameData = (dataUrl, before, after) => {
+    drawImage(dataUrl, before, after);
+  }
 
-      const layer = new Konva.Layer();
-      stage.add(layer);
+  const togglePlay = () => {
+    framesRef.current.togglePlay();
+  }
 
-      const canvas = document.createElement('canvas');
-      canvas.width = stage.width();
-      canvas.height = stage.height();
+  const duplicateFrame = () => {
+    framesRef.current.duplicateFrame();
+  }
 
-      const image = new Konva.Image({
-        image: canvas,
-        x: 0,
-        y: 0
-      });
-      layer.add(image);
-      stage.draw();
+  const drawImage = (dataUrl, before, after) => {
+    canvasRef.current.drawImage(dataUrl, before, after);
+  }
 
-      const context = canvas.getContext('2d');
-      context.strokeStyle = '#000';
-      context.lineJoin = 'round';
-      context.lineWidth = 10;
+  const clearFrame = () => {
+    canvasRef.current.clearScene();
+  }
 
-      let isPaint = false;
-      let lastPointerPosition;
-      let mode = 'brush';
+  const pickColor = (color) => {
+    setCurrentColor(color.hex);
+    canvasRef.current.setColor(color.hex);
+    setIsTooltipOpen(false);
+  }
 
-      document.body.addEventListener('pointerdown', function(evt) {
-        isPaint = true;
-        lastPointerPosition = stage.getPointerPosition();
-      });
+  const setBrush = (size) => {
+    setBrushSize(size);
+    canvasRef.current.setBrush(size);
+  }
 
-      document.body.addEventListener('pointerup', function() {
-        isPaint = false;
-        steps.push(image.toDataURL());
-        if(steps > 20) {
-          steps.shift();
-        }
-        console.log('steps', steps);
-      });
+  const setOpacityValue = (value) => {
+    setOpacity(value);
+    canvasRef.current.setOpacity(value);
+  }
 
-      const draw = (evt) => {
-        if (!isPaint) {
-          return;
-        }
+  useEffect(() => {
+    canvasRef.current.setMode(tool);
+  }, [tool]);
 
-        context.lineWidth = (evt.pressure || 1) * 15;
 
-        if (mode === 'brush') {
-          context.globalCompositeOperation = 'source-over';
-        }
-        if (mode === 'eraser') {
-          context.globalCompositeOperation = 'destination-out';
-        }
-        context.beginPath();
-
-        lastPointerPosition = lastPointerPosition || stage.getPointerPosition();
-
-        let localPos = {
-          x: lastPointerPosition.x - image.x(),
-          y: lastPointerPosition.y - image.y()
-        };
-        context.moveTo(localPos.x, localPos.y);
-        const pos = stage.getPointerPosition();
-        localPos = {
-          x: pos.x - image.x(),
-          y: pos.y - image.y()
-        };
-        context.lineTo(localPos.x, localPos.y);
-        context.closePath();
-        context.stroke();
-
-        lastPointerPosition = pos;
-        layer.batchDraw();
-      }
-
-      document.body.addEventListener('pointermove', draw);
-    })
   return <div className={classes.container}>
     <div className={classes.workArea}>
       <div className={classes.tools}>
-        <RoundButton onClick={() => {setFrames(frames.concat([btoa(uuid.v4())]))}}>+</RoundButton>
-        <RoundButton><TrashIcon/></RoundButton>
-        <RoundButton><SaveIcon/></RoundButton>
+        <RoundButton title={getString(stringNames.saveToolTitle)}><SaveIcon/></RoundButton>
+        <RoundButton title={getString(stringNames.undoToolTitle)}><UndoIcon/></RoundButton>
+        <RoundButton title={getString(stringNames.redoToolTitle)}><RedoIcon/></RoundButton>
       </div>
-      <div id="drawContainer" className={classes.paper}></div>
+      <Canvas
+          updateFrames={updateFrames}
+          tool={tool}
+          ref={canvasRef}
+      />
       <div className={classes.tools}>
-        <RoundButton><PenIcon/></RoundButton>
-        <RoundButton><EraserIcon/></RoundButton>
-        <RoundButton><ColorIcon/></RoundButton>
+        <RoundButton
+            title={getString(stringNames.brushToolTitle)}
+            onClick={() => setTool(TOOLS.BRUSH)}
+            isPressed={tool === TOOLS.BRUSH}
+        >
+          <PenIcon/>
+        </RoundButton>
+        <RoundButton
+            title={getString(stringNames.eraserToolTitle)}
+            onClick={() => setTool(TOOLS.ERASER)}
+            isPressed={tool === TOOLS.ERASER}
+        >
+          <EraserIcon/>
+        </RoundButton>
+        <Tooltip
+          title={
+            <div className={classes.colorPicker}>
+              <BlockPicker
+                  triangle={'hide'}
+                  color={ currentColor }
+                  onChangeComplete={ pickColor }
+              />
+            </div>
+          }
+          PopperProps={{
+            disablePortal: true,
+            modifiers: [
+              {
+                name: "offset",
+                options: {
+                  offset: [-20, -30],
+                }
+              },
+            ],
+          }}
+          componentsProps={{
+            tooltip: {
+              sx: {
+                bgcolor: currentColor,
+                '& .MuiTooltip-arrow': {
+                  color: currentColor,
+                },
+                padding: '0px',
+                borderRadius: '8px'
+              },
+            },
+          }}
+          placement="left"
+          open={isTooltipOpen}
+          disableFocusListener
+          disableHoverListener
+          disableTouchListener
+        >
+          <div>
+            <ClickAwayListener onClickAway={() => setIsTooltipOpen(false)}>
+              <div>
+                <RoundButton
+                    title={getString(stringNames.paletteToolTitle)}
+                    onClick={() => setIsTooltipOpen(!isTooltipOpen)}
+                    isPressed={isTooltipOpen}
+                >
+                  <ColorIcon/>
+                </RoundButton>
+              </div>
+            </ClickAwayListener>
+          </div>
+        </Tooltip>
+        <Tooltip
+            title={
+              <div className={classes.slider}>
+                <Slider
+                    aria-label="Volume"
+                    value={brushSize}
+                    color="secondary"
+                    min={1}
+                    max={100}
+                    onChange={(e, newValue) => setBrush(Number(newValue))} />
+              </div>
+            }
+            PopperProps={{
+              disablePortal: true,
+              modifiers: [
+                {
+                  name: "offset",
+                  options: {
+                    offset: [0, -30],
+                  }
+                },
+              ],
+            }}
+            componentsProps={{
+              tooltip: {
+                sx: {
+                  padding: '0px',
+                  borderRadius: '8px',
+                },
+              },
+            }}
+            placement="left"
+            open={isBrushTooltipOpen}
+            disableFocusListener
+            disableHoverListener
+            disableTouchListener
+        >
+          <div>
+            <ClickAwayListener onClickAway={() => setIsBrushTooltipOpen(false)}>
+              <div>
+                <RoundButton
+                    title={getString(stringNames.brushSizeToolTitle)}
+                    iconColor={currentColor}
+                    onClick={() => {
+                      console.log(isBrushTooltipOpen);
+                      setIsBrushTooltipOpen(!isBrushTooltipOpen);
+                    }}
+                    isPressed={isBrushTooltipOpen}
+                >
+                  <BrushSizeIcon/>
+                </RoundButton>
+              </div>
+            </ClickAwayListener>
+          </div>
+        </Tooltip>
+        <Tooltip
+            title={
+              <div className={classes.slider}>
+                <Slider
+                    aria-label="Opacity"
+                    value={opacity * 100}
+                    color="secondary"
+                    min={0}
+                    max={100}
+                    onChange={(e, newValue) => setOpacityValue(Number(newValue) / 100)} />
+              </div>
+            }
+            PopperProps={{
+              disablePortal: true,
+              modifiers: [
+                {
+                  name: "offset",
+                  options: {
+                    offset: [0, -30],
+                  }
+                },
+              ],
+            }}
+            componentsProps={{
+              tooltip: {
+                sx: {
+                  padding: '0px',
+                  borderRadius: '8px',
+                },
+              },
+            }}
+            placement="left"
+            open={isOpacityTooltipOpen}
+            disableFocusListener
+            disableHoverListener
+            disableTouchListener
+        >
+          <div>
+            <ClickAwayListener onClickAway={() => setIsOpacityTooltipOpen(false)}>
+              <div>
+                <RoundButton
+                    title={getString(stringNames.opacityToolTitle)}
+                    onClick={() => {
+                      console.log(isOpacityTooltipOpen);
+                      setIsOpacityTooltipOpen(!isOpacityTooltipOpen);
+                    }}
+                    isPressed={isOpacityTooltipOpen}
+                >
+                  <OpacityIcon/>
+                </RoundButton>
+              </div>
+            </ClickAwayListener>
+          </div>
+        </Tooltip>
       </div>
     </div>
-    <Frames frames={frames}/>
+    <Frames
+        ref={framesRef}
+        setCurrentFrameData={setCurrentFrameData}
+        setIsPlay={setIsPlay}
+        isPlay={isPlay}
+        isMultiple={isMultiple}
+    />
+    <div className={classes.bottomTools}>
+      <RoundButton title={getString(stringNames.addFrameToolTitle)} onClick={() => {addFrame()}}>+</RoundButton>
+      <RoundButton title={getString(stringNames.duplicateFrameToolTitle)} onClick={() => {duplicateFrame()}}><DuplicateIcon/></RoundButton>
+      <RoundButton title={getString(stringNames.playPauseToolTitle)} onClick={() => {togglePlay()}}>{ isPlay ? <PauseIcon/> : <PlayIcon/>}</RoundButton>
+      <RoundButton title={getString(stringNames.deleteFrameToolTitle)} onClick={() => {deleteFrame()}}><TrashIcon/></RoundButton>
+      <RoundButton title={getString(stringNames.onionSkinToolTitle)} isPressed={isMultiple} onClick={() => {setIsMultiple(!isMultiple)}}><MultipleIcon/></RoundButton>
+      <RoundButton title={getString(stringNames.clearToolTitle)} onClick={() => {clearFrame()}}><ClearIcon/></RoundButton>
+    </div>
   </div>
 };
 

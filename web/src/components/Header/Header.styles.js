@@ -34,7 +34,8 @@ export const useStyles = createUseStyles(theme => {
       marginRight: '32px',
       '&:last-child': {
         marginRight: 0
-      }
+      },
+      boxShadow:  `13px 13px 26px ${theme.colors.dropShadowLight}, -13px -13px 26px ${theme.colors.dropShadowDark}`,
     },
     addButton: {
       cursor: 'pointer',
@@ -45,13 +46,11 @@ export const useStyles = createUseStyles(theme => {
       borderRadius: '32px',
       color: theme.colors.buttonText,
       fontSize: '2em',
-      background: '#ebedf0',
       //TODO: use all colores from theme here
-      boxShadow:  '13px 13px 26px #dddfe2, -13px -13px 26px #f9fbfe',
-      border: '2px solid white',
+      boxShadow:  `13px 13px 26px ${theme.colors.dropShadowDark}, -13px -13px 26px ${theme.colors.dropShadowLight}`,
+      border: `2px solid ${theme.colors.mainBackground}`,
       '&:hover': {
         backgroundColor: theme.colors.hoverButtonBackground,
-        boxShadow: 'inset 13px 13px 26px #f00098, inset -13px -13px 26px #ff00ac',
         fontSize: '2.5em',
         transform: 'rotate(360deg)',
       },
