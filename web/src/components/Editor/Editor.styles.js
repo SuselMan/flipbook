@@ -24,13 +24,6 @@ export const useStyles = createUseStyles(theme => {
       display: 'flex',
       justifyContent: 'center',
     },
-    slider: {
-      width: 200,
-      height: 30,
-      backgroundColor: theme.colors.paper,
-      padding: '10px 20px',
-      borderRadius: 8,
-    },
     colorPicker: {
       borderRadius: '8px!important',
       border: '0!important',

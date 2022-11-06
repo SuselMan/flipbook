@@ -3,7 +3,6 @@ import { useStyles } from './Editor.styles';
 import RoundButton from '../shared/RoundButton/RoundButton';
 import {ReactComponent as TrashIcon} from '../../shared/icons/trash.svg';
 import {ReactComponent as SaveIcon} from '../../shared/icons/save.svg';
-import {ReactComponent as ColorIcon} from '../../shared/icons/color.svg';
 import {ReactComponent as PenIcon} from '../../shared/icons/pen.svg';
 import {ReactComponent as EraserIcon} from '../../shared/icons/eraser.svg';
 import {ReactComponent as PlayIcon} from '../../shared/icons/play.svg';
@@ -11,32 +10,32 @@ import {ReactComponent as PauseIcon} from '../../shared/icons/pause.svg';
 import {ReactComponent as DuplicateIcon} from '../../shared/icons/duplicate.svg';
 import {ReactComponent as MultipleIcon} from '../../shared/icons/multiple.svg';
 import {ReactComponent as ClearIcon} from '../../shared/icons/clear.svg';
-import {ReactComponent as BrushSizeIcon} from '../../shared/icons/brush-size.svg';
-import {ReactComponent as OpacityIcon} from '../../shared/icons/opacity.svg';
-import {ReactComponent as UndoIcon} from '../../shared/icons/undo.svg';
-import {ReactComponent as RedoIcon} from '../../shared/icons/redo.svg';
+import {ReactComponent as UndoIcon} from '../../shared/icons/redo.svg';
+import {ReactComponent as RedoIcon} from '../../shared/icons/undo.svg';
 import { stringNames, getString } from '../../configs/strings';
 import { TOOLS } from './Editor.constants';
 import Frames from './Frames/Frames';
 import Canvas from "./Canvas/Canvas";
-import { BlockPicker } from 'react-color';
-import Tooltip from '@mui/material/Tooltip';
-import ClickAwayListener from '@mui/material/ClickAwayListener';
-import Slider from '@mui/material/Slider';
+import Color from './Tools/Color/Color';
+import BrushSize from './Tools/BrushSize/BrushSize';
+import Opacity from './Tools/Opacity/Opacity';
+import Shortcuts from '../../modules/Shortcuts/Shortcuts';
+import { SHORTCUTS } from '../../configs/shortcuts';
+import useStateRef from 'react-usestateref';
 
 const Editor = () => {
   const classes = useStyles();
   const framesRef = useRef();
   const canvasRef = useRef();
   const [isPlay, setIsPlay] = useState(false);
-  const [ isMultiple, setIsMultiple ] = useState(false);
+  const [ isMultiple, setIsMultiple, isMultipleRef] = useStateRef(false);
   const [tool, setTool] = useState(TOOLS.BRUSH)
   const [currentColor, setCurrentColor] = useState('#000');
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
   const [isBrushTooltipOpen, setIsBrushTooltipOpen] = useState(false);
   const [isOpacityTooltipOpen, setIsOpacityTooltipOpen] = useState(false);
-  const [brushSize, setBrushSize] = useState(5);
-  const [opacity, setOpacity] = useState(1);
+  const [brushSize, setBrushSize, brushSizeRef] = useStateRef(5);
+  const [opacity, setOpacity] = useStateRef(1);
 
   const updateFrames = (dataUrl) => {
     framesRef.current.updateFrames(dataUrl);
@@ -86,17 +85,55 @@ const Editor = () => {
     canvasRef.current.setOpacity(value);
   }
 
+  const undo = () => {
+    console.log('undo');
+    framesRef.current.undo();
+  }
+
+  const redo = () => {
+    console.log('redo');
+    framesRef.current.redo();
+  }
+
+  const reduceBrush = () => {
+    let newSIze = brushSizeRef.current - 1;
+    if(newSIze < 1) newSIze = 1;
+    setBrush(newSIze)
+  }
+
+  const increaseBrush = () => {
+    let newSIze = brushSizeRef.current + 1;
+    if(newSIze > 100) newSIze = 100;
+    setBrush(newSIze)
+  }
+
   useEffect(() => {
     canvasRef.current.setMode(tool);
   }, [tool]);
 
+  useEffect(() => {
+    Shortcuts.on(SHORTCUTS.UNDO, undo);
+    Shortcuts.on(SHORTCUTS.REDO, redo);
+    Shortcuts.on(SHORTCUTS.CLEAR_FRAME, clearFrame);
+    Shortcuts.on(SHORTCUTS.DELETE_FRAME, duplicateFrame);
+    Shortcuts.on(SHORTCUTS.ONION_SKIN_TOOL, () => setIsMultiple(!isMultipleRef.current));
+    Shortcuts.on(SHORTCUTS.ADD_FRAME, addFrame);
+    Shortcuts.on(SHORTCUTS.REDUCE_BRUSH, reduceBrush);
+    Shortcuts.on(SHORTCUTS.INCREASE_BRUSH, increaseBrush);
+    Shortcuts.on(SHORTCUTS.PLAY_PAUSE,  togglePlay);
+    Shortcuts.on(SHORTCUTS.BRUSH_TOOL, () => setTool(TOOLS.BRUSH));
+    Shortcuts.on(SHORTCUTS.ERASER_TOOL, () => setTool(TOOLS.ERASER));
+    Shortcuts.on(SHORTCUTS.DELETE_FRAME,  deleteFrame);
+    Shortcuts.on(SHORTCUTS.NEXT_FRAME, () => framesRef.current.selectNextFrame());
+    Shortcuts.on(SHORTCUTS.PREVIOUS_FRAME, () => framesRef.current.selectPreviousFrame());
+  }, []);
 
   return <div className={classes.container}>
     <div className={classes.workArea}>
       <div className={classes.tools}>
         <RoundButton title={getString(stringNames.saveToolTitle)}><SaveIcon/></RoundButton>
-        <RoundButton title={getString(stringNames.undoToolTitle)}><UndoIcon/></RoundButton>
-        <RoundButton title={getString(stringNames.redoToolTitle)}><RedoIcon/></RoundButton>
+        <RoundButton onClick={() => undo()} title={getString(stringNames.undoToolTitle)}><UndoIcon/></RoundButton>
+        <RoundButton onClick={() => redo()} title={getString(stringNames.redoToolTitle)}><RedoIcon/></RoundButton>
       </div>
       <Canvas
           updateFrames={updateFrames}
@@ -118,168 +155,26 @@ const Editor = () => {
         >
           <EraserIcon/>
         </RoundButton>
-        <Tooltip
-          title={
-            <div className={classes.colorPicker}>
-              <BlockPicker
-                  triangle={'hide'}
-                  color={ currentColor }
-                  onChangeComplete={ pickColor }
-              />
-            </div>
-          }
-          PopperProps={{
-            disablePortal: true,
-            modifiers: [
-              {
-                name: "offset",
-                options: {
-                  offset: [-20, -30],
-                }
-              },
-            ],
-          }}
-          componentsProps={{
-            tooltip: {
-              sx: {
-                bgcolor: currentColor,
-                '& .MuiTooltip-arrow': {
-                  color: currentColor,
-                },
-                padding: '0px',
-                borderRadius: '8px'
-              },
-            },
-          }}
-          placement="left"
-          open={isTooltipOpen}
-          disableFocusListener
-          disableHoverListener
-          disableTouchListener
-        >
-          <div>
-            <ClickAwayListener onClickAway={() => setIsTooltipOpen(false)}>
-              <div>
-                <RoundButton
-                    title={getString(stringNames.paletteToolTitle)}
-                    onClick={() => setIsTooltipOpen(!isTooltipOpen)}
-                    isPressed={isTooltipOpen}
-                >
-                  <ColorIcon/>
-                </RoundButton>
-              </div>
-            </ClickAwayListener>
-          </div>
-        </Tooltip>
-        <Tooltip
-            title={
-              <div className={classes.slider}>
-                <Slider
-                    aria-label="Volume"
-                    value={brushSize}
-                    color="secondary"
-                    min={1}
-                    max={100}
-                    onChange={(e, newValue) => setBrush(Number(newValue))} />
-              </div>
-            }
-            PopperProps={{
-              disablePortal: true,
-              modifiers: [
-                {
-                  name: "offset",
-                  options: {
-                    offset: [0, -30],
-                  }
-                },
-              ],
-            }}
-            componentsProps={{
-              tooltip: {
-                sx: {
-                  padding: '0px',
-                  borderRadius: '8px',
-                },
-              },
-            }}
-            placement="left"
-            open={isBrushTooltipOpen}
-            disableFocusListener
-            disableHoverListener
-            disableTouchListener
-        >
-          <div>
-            <ClickAwayListener onClickAway={() => setIsBrushTooltipOpen(false)}>
-              <div>
-                <RoundButton
-                    title={getString(stringNames.brushSizeToolTitle)}
-                    iconColor={currentColor}
-                    onClick={() => {
-                      console.log(isBrushTooltipOpen);
-                      setIsBrushTooltipOpen(!isBrushTooltipOpen);
-                    }}
-                    isPressed={isBrushTooltipOpen}
-                >
-                  <BrushSizeIcon/>
-                </RoundButton>
-              </div>
-            </ClickAwayListener>
-          </div>
-        </Tooltip>
-        <Tooltip
-            title={
-              <div className={classes.slider}>
-                <Slider
-                    aria-label="Opacity"
-                    value={opacity * 100}
-                    color="secondary"
-                    min={0}
-                    max={100}
-                    onChange={(e, newValue) => setOpacityValue(Number(newValue) / 100)} />
-              </div>
-            }
-            PopperProps={{
-              disablePortal: true,
-              modifiers: [
-                {
-                  name: "offset",
-                  options: {
-                    offset: [0, -30],
-                  }
-                },
-              ],
-            }}
-            componentsProps={{
-              tooltip: {
-                sx: {
-                  padding: '0px',
-                  borderRadius: '8px',
-                },
-              },
-            }}
-            placement="left"
-            open={isOpacityTooltipOpen}
-            disableFocusListener
-            disableHoverListener
-            disableTouchListener
-        >
-          <div>
-            <ClickAwayListener onClickAway={() => setIsOpacityTooltipOpen(false)}>
-              <div>
-                <RoundButton
-                    title={getString(stringNames.opacityToolTitle)}
-                    onClick={() => {
-                      console.log(isOpacityTooltipOpen);
-                      setIsOpacityTooltipOpen(!isOpacityTooltipOpen);
-                    }}
-                    isPressed={isOpacityTooltipOpen}
-                >
-                  <OpacityIcon/>
-                </RoundButton>
-              </div>
-            </ClickAwayListener>
-          </div>
-        </Tooltip>
+        <Color
+          isTooltipOpen={isTooltipOpen}
+          setIsTooltipOpen={setIsTooltipOpen}
+          currentColor={currentColor}
+          pickColor={pickColor}
+        />
+        <BrushSize
+            brushSize={brushSize}
+            setIsBrushTooltipOpen={setIsBrushTooltipOpen}
+            currentColor={currentColor}
+            isBrushTooltipOpen={isBrushTooltipOpen}
+            setBrush={setBrush}
+        />
+        <Opacity
+            currentColor={currentColor}
+            opacity={opacity}
+            setOpacityValue={setOpacityValue}
+            isOpacityTooltipOpen={isOpacityTooltipOpen}
+            setIsOpacityTooltipOpen={setIsOpacityTooltipOpen}
+        />
       </div>
     </div>
     <Frames

@@ -36,7 +36,7 @@ export const STRINGS = {
         playPauseToolTitle: 'Play/Pause (Space)',
         duplicateFrameToolTitle: 'Duplicate frame (Ctrl D)',
         deleteFrameToolTitle: 'Delete frame (Delete)',
-        clearToolTitle: 'Clear frame (Ctrl Shift Delete)',
+        clearToolTitle: 'Clear frame (Ctrl Backspace)',
         brushSizeToolTitle: 'Brush size',
         opacityToolTitle: 'Opacity',
         undoToolTitle: 'Undo (Ctrl Z)',

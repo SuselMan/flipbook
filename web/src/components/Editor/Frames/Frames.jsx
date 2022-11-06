@@ -3,19 +3,20 @@ import { useStyles } from './Frames.styles';
 import clsx from 'clsx';
 import Frame from './Frame';
 import {getEmptyFrame} from "../Editor.utils";
+import {ACTIONS} from "../Editor.constants";
 
 const Frames = forwardRef(({ setCurrentFrameData, isPlay, setIsPlay, isMultiple }, ref) => {
   const classes = useStyles();
-  const steps = [];
   const [currentFrame, setCurrentFrame] = useState(getEmptyFrame(0));
   const [frames, setFrames]= useState([  currentFrame, ]);
   const [multipleLeft, setMultipleLeft] = useState(0);
   const [multipleRight, setMultipleRight] = useState(0);
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
   useEffect(() => {
     let before;
     let after;
-    console.log(isMultiple);
     if(isMultiple) {
       before = frames.slice(currentFrame.index - Math.abs(multipleLeft), currentFrame.index).map(({dataUrl}) => dataUrl);
       after = frames.slice(currentFrame.index + 1, currentFrame.index + 1 + multipleRight).map(({dataUrl}) => dataUrl);
@@ -29,13 +30,91 @@ const Frames = forwardRef(({ setCurrentFrameData, isPlay, setIsPlay, isMultiple 
       addFrame,
       deleteFrame,
       duplicateFrame,
-      togglePlay
+      togglePlay,
+      undo,
+      redo,
+      selectNextFrame,
+      selectPreviousFrame
     }
   });
 
+  const addHistoryAction = (action) => {
+    history.splice(historyIndex + 1, history.length);
+    history.push( action );
+    setHistory(history);
+    setHistoryIndex(historyIndex + 1);
+  }
+
+  const selectNextFrame = () => {
+    const index = currentFrame.index;
+    if(frames[index + 1]) {
+      setCurrentFrame(frames[index + 1])
+    }
+  }
+
+  const selectPreviousFrame = () =>{
+    const index = currentFrame.index;
+    if(index > 0) {
+      setCurrentFrame(frames[index - 1])
+    }
+  }
+
+  const undo = () => {
+    if(historyIndex > -1) {
+      const action = history[historyIndex];
+      setHistoryIndex(historyIndex - 1);
+      switch (action.type) {
+        case ACTIONS.FRAME_ADDED:
+          deleteFrame(action.data.frame, true);
+          break;
+        case ACTIONS.FRAME_REMOVED:
+          addFrame(action.data.frame, true);
+          break;
+        case ACTIONS.FRAME_CHANGED:
+          replaceFrame(action.data.oldFrame)
+          break;
+      }
+    }
+  }
+
+  const redo = () => {
+      if(historyIndex < history.length - 1) {
+        const newHistoryIndex = historyIndex + 1;
+        const action = history[newHistoryIndex];
+        setHistoryIndex(historyIndex + 1);
+        switch (action.type) {
+          case ACTIONS.FRAME_ADDED:
+            addFrame(action.data.frame, true);
+            break;
+          case ACTIONS.FRAME_REMOVED:
+            deleteFrame(action.data.frame, true);
+            break;
+          case ACTIONS.FRAME_CHANGED:
+            replaceFrame(action.data.newFrame);
+            break;
+        }
+      }
+  }
+
+  const replaceFrame = (frame) => {
+    setFrames(frames.map((item) => {
+      if(item.id === frame.id) {
+        return frame;
+      }
+      return item;
+    }));
+    setCurrentFrame(frame);
+  }
+
   const updateFrames = (dataUrl) => {
-    steps.push(dataUrl);
-    const newFrame = { ...currentFrame, dataUrl }
+    const newFrame = { ...currentFrame, dataUrl };
+    addHistoryAction({
+      type: ACTIONS.FRAME_CHANGED,
+      data: {
+        oldFrame: { ...currentFrame },
+        newFrame,
+      },
+    });
     setCurrentFrame( newFrame );
     const newFrames = frames.map((frame) => {
       if(frame.id === newFrame.id) {
@@ -45,9 +124,6 @@ const Frames = forwardRef(({ setCurrentFrameData, isPlay, setIsPlay, isMultiple 
       }
     });
     setFrames(newFrames);
-    if(steps > 20) {
-      steps.shift();
-    }
   }
 
   useEffect(() => {
@@ -69,30 +145,43 @@ const Frames = forwardRef(({ setCurrentFrameData, isPlay, setIsPlay, isMultiple 
     setIsPlay(!isPlay);
   }
 
-  const addFrame = () => {
-    const index = currentFrame.index + 1;
+  const addFrame = (frame, silent) => {
+    const index = frame? frame.index : currentFrame.index + 1;
     let arr = frames;
-    arr.splice(index, 0, getEmptyFrame(index))
+    const newFrame =  { ...getEmptyFrame(index), ...(frame || {})};
+    arr.splice(index, 0, newFrame)
     arr = arr.map((item, index) => ({...item, index}));
     setFrames(arr);
     setCurrentFrame(arr[index]);
+    if(!silent) {
+      addHistoryAction({
+        type: ACTIONS.FRAME_ADDED,
+        data: {
+          frame: { ...newFrame }
+        },
+      });
+    }
   }
 
   const duplicateFrame = () => {
-    const index = currentFrame.index;
     const newFrameIndex = currentFrame.index + 1;
     const newFrame = { ...getEmptyFrame(newFrameIndex), dataUrl: currentFrame.dataUrl }
-    const framesBefore = frames.slice(0, index + 1);
-    const framesAfter = frames.slice(index + 1).map((frame) => ({...frame, index: frame.index + 1}));
-    setFrames([...framesBefore, newFrame, ...framesAfter]);
-    setCurrentFrame(newFrame);
+    addFrame(newFrame);
   }
 
-  const deleteFrame = () => {
+  const deleteFrame = (frame, silent = false) => {
     if(frames.length === 1) {
       return;
     }
-    const index = currentFrame.index;
+    const index = frame ? frame.index : currentFrame.index;
+    if(!silent) {
+      addHistoryAction({
+        type: ACTIONS.FRAME_REMOVED,
+        data: {
+          frame: { ...currentFrame }
+        },
+      });
+    }
     const framesBefore = frames.slice(0, index);
     const framesAfter = frames.slice(index + 1).map((frame) => ({...frame, index: frame.index - 1}));
     setFrames(

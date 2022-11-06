@@ -43,6 +43,7 @@ const Canvas = forwardRef(({  updateFrames, dataUrl, currentFrameID }, ref) => {
     const drawImage = async (dataUrl, layer, data = {}) => {
         const imageObj = new Image();
         imageObj.onload = () => {
+            layer.destroyChildren();
             const image = new Konva.Image({
                 x: 0,
                 y: 0,
@@ -57,15 +58,18 @@ const Canvas = forwardRef(({  updateFrames, dataUrl, currentFrameID }, ref) => {
     }
 
     const drawScene = async (dataUrl, before = [], after = []) => {
-        console.log('drawScene', before, after);
-        layer.destroyChildren();
         supportLayerBefore.destroyChildren();
         supportLayerAfter.destroyChildren();
-        supportLayerBefore.batchDraw();
-        supportLayerAfter.batchDraw();
+        if(!before.length ) {
+            supportLayerBefore.batchDraw();
+        }
+        if(!after.length) {
+            supportLayerAfter.batchDraw();
+        }
         if(dataUrl) {
             drawImage(dataUrl, layer);
         } else {
+            layer.destroyChildren();
             layer.batchDraw();
         }
         before.forEach((dataUrl, index) => {
@@ -93,12 +97,13 @@ const Canvas = forwardRef(({  updateFrames, dataUrl, currentFrameID }, ref) => {
 
 
     const draw = (evt) => {
+        console.log('draw');
         if (!isPaint) {
             return;
         }
 
         // prevent scrolling on touch devices
-        evt.evt.preventDefault();
+        evt?.evt?.preventDefault();
 
         const pos = stage.getPointerPosition();
         var newPoints = lastLine.points().concat([pos.x, pos.y]);
@@ -107,21 +112,26 @@ const Canvas = forwardRef(({  updateFrames, dataUrl, currentFrameID }, ref) => {
     }
 
     const startDrawing = () => {
+        console.log('startDrawing');
         isPaint = true;
         const pos = stage.getPointerPosition();
+        console.log(pos);
         lastLine = new Konva.Line({
             stroke: color,
             opacity,
             strokeWidth: brushSize,
+            bezier: true,
             globalCompositeOperation:
                 mode === 'brush' ? 'source-over' : 'destination-out',
             // round cap for smoother lines
             lineCap: 'round',
             lineJoin: 'round',
             // add point twice, so we have some drawings even on a simple click
-            points: [pos.x, pos.y, pos.x, pos.y],
+            points: [pos.x, pos.y, pos.x +10 , pos.y +10],
         });
         layer.add(lastLine);
+        layer.batchDraw();
+        draw()
     }
 
     const endDrawing = () => {
@@ -134,7 +144,6 @@ const Canvas = forwardRef(({  updateFrames, dataUrl, currentFrameID }, ref) => {
         stage.on('mousedown touchstart', startDrawing);
         stage.on('mousemove touchmove', draw);
         stage.on('mouseup touchend', endDrawing);
-
     }, []);
 
     return <div
