@@ -97,7 +97,6 @@ const Canvas = forwardRef(({  updateFrames, dataUrl, currentFrameID }, ref) => {
 
 
     const draw = (evt) => {
-        console.log('draw');
         if (!isPaint) {
             return;
         }
@@ -112,10 +111,8 @@ const Canvas = forwardRef(({  updateFrames, dataUrl, currentFrameID }, ref) => {
     }
 
     const startDrawing = () => {
-        console.log('startDrawing');
         isPaint = true;
         const pos = stage.getPointerPosition();
-        console.log(pos);
         lastLine = new Konva.Line({
             stroke: color,
             opacity,

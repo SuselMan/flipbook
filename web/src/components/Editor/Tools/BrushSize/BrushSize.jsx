@@ -62,7 +62,6 @@ const BrushSize = ({ brushSize, setIsBrushTooltipOpen, currentColor, isBrushTool
                         title={getString(stringNames.brushSizeToolTitle)}
                         iconColor={currentColor}
                         onClick={() => {
-                            console.log(isBrushTooltipOpen);
                             setIsBrushTooltipOpen(!isBrushTooltipOpen);
                         }}
                         isPressed={isBrushTooltipOpen}

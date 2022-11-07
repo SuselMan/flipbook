@@ -7,7 +7,6 @@ import { withRouter } from 'react-router-dom';
 const Header = ({location}) => {
   const { pathname } = location;
   const classes = useStyles();
-  console.log('pathname', pathname);
   return <header className={classes.header}>
     <nav>
       <div className={classes.leftPanel}>

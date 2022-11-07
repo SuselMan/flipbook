@@ -86,12 +86,10 @@ const Editor = () => {
   }
 
   const undo = () => {
-    console.log('undo');
     framesRef.current.undo();
   }
 
   const redo = () => {
-    console.log('redo');
     framesRef.current.redo();
   }
 
@@ -115,7 +113,7 @@ const Editor = () => {
     Shortcuts.on(SHORTCUTS.UNDO, undo);
     Shortcuts.on(SHORTCUTS.REDO, redo);
     Shortcuts.on(SHORTCUTS.CLEAR_FRAME, clearFrame);
-    Shortcuts.on(SHORTCUTS.DELETE_FRAME, duplicateFrame);
+    Shortcuts.on(SHORTCUTS.DUPLICATE_FRAME, duplicateFrame);
     Shortcuts.on(SHORTCUTS.ONION_SKIN_TOOL, () => setIsMultiple(!isMultipleRef.current));
     Shortcuts.on(SHORTCUTS.ADD_FRAME, addFrame);
     Shortcuts.on(SHORTCUTS.REDUCE_BRUSH, reduceBrush);

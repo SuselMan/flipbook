@@ -61,7 +61,6 @@ const Opacity = ({ opacity, setOpacityValue, isOpacityTooltipOpen, setIsOpacityT
                     <RoundButton
                         title={getString(stringNames.opacityToolTitle)}
                         onClick={() => {
-                            console.log(isOpacityTooltipOpen);
                             setIsOpacityTooltipOpen(!isOpacityTooltipOpen);
                         }}
                         isPressed={isOpacityTooltipOpen}
