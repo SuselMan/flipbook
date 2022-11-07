@@ -20,6 +20,9 @@ export const useStyles = createUseStyles(theme => {
         }
       }
     },
+    bold: {
+      fontWeight: 'bold',
+    },
     leftPanel: {
       left: 0
     },

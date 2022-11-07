@@ -1,6 +1,8 @@
 import React from 'react';
 import Editor from './components/Editor/Editor';
 import Header from './components/Header/Header';
+import Login from './components/Login/Login';
+import Register from './components/Register/Register';
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { useStyles } from './App.styles';
 
@@ -9,8 +11,23 @@ const App = (props) => {
   return (
       <main className={classes.app}>
             <Router>
-              <Header/>
-              <Editor/>
+                <Header/>
+                <Switch>
+                    <Route path="/profile">
+                        <div>
+                            Profile
+                        </div>
+                    </Route>
+                    <Route path="/login">
+                        <Login/>
+                    </Route>
+                    <Route path="/register">
+                        <Register/>
+                    </Route>
+                    <Route path="/">
+                        <Editor/>
+                    </Route>
+                </Switch>
             </Router>
       </main>
   );
