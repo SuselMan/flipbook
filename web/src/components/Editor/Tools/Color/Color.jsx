@@ -55,6 +55,7 @@ const Color = ({ currentColor, pickColor, isTooltipOpen, setIsTooltipOpen }) => 
                         title={getString(stringNames.paletteToolTitle)}
                         onClick={() => setIsTooltipOpen(!isTooltipOpen)}
                         isPressed={isTooltipOpen}
+                        borderColor={currentColor}
                     >
                         <ColorIcon/>
                     </RoundButton>

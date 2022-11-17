@@ -28,7 +28,7 @@ const themes = {
       selectedOutline: '#cbcbcb',
       scrollBarThumbColor: '#494949',
       dropShadowDark: '#131313',
-      dropShadowLight: '#282828',
+      dropShadowLight: '#343434'
     }
   }
 }

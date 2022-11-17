@@ -7,14 +7,8 @@ export const useStyles = createUseStyles(theme => {
       display: 'flex',
       overflow: 'hidden',
       overflowX: 'auto',
-      '&::-webkit-scrollbar': {
-        height: '8px',
-        backgroundColor: theme.colors.scrollbarBackground
-      },
-      '&::-webkit-scrollbar-thumb': {
-        backgroundColor: theme.colors.scrollBarThumbColor
-      },
-      padding: 2
+      padding: 2,
+      flexShrink: 0,
     },
     frameWrapper: {
       position: 'relative',
@@ -22,14 +16,8 @@ export const useStyles = createUseStyles(theme => {
       height: FRAME_HEIGHT,
       flexShrink: 0,
       flexGrow: 0,
-      margin: `16px ${FRAME_MARGIN}px`,
+      margin: `8px ${FRAME_MARGIN}px`,
       boxShadow: `6px 6px 13px ${theme.colors.dropShadowDark}, -6px -6px 13px ${theme.colors.dropShadowLight}`,
-      '&:first-child' :{
-        marginLeft: 'auto'
-      },
-      '&:last-child' :{
-        marginRight: 'auto'
-      }
     },
     frame: {
       overflow: 'hidden',

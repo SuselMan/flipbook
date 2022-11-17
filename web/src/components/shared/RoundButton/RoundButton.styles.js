@@ -44,6 +44,15 @@ export const useStyles = createUseStyles(theme => {
         stroke: theme.colors.mainText,
         color: theme.colors.mainText,
       }
-    }
+    },
+    small: {
+      margin: '15px 15px',
+      width: 40,
+      height: 40,
+      '&>*': {
+        width: 18,
+        height: 18,
+      },
+    },
   }
 });

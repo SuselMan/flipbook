@@ -1,14 +1,19 @@
 import { createUseStyles } from 'react-jss';
 
-const HEADER_HEIGHT = 128;
+export const HEADER_HEIGHT = 128;
 
 export const useStyles = createUseStyles(theme => {
   return {
     header: {
       height: HEADER_HEIGHT,
+      padding: '0 100px',
+      position: 'relative',
+      zIndex:1000,
+      backgroundColor: theme.colors.mainBackground,
       '& > nav': {
         width: '100%',
         height: HEADER_HEIGHT,
+        position: 'relative',
         '& > *': {
           display: 'flex',
           position: 'absolute',

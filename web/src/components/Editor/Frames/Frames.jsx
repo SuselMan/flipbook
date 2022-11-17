@@ -3,7 +3,7 @@ import { useStyles } from './Frames.styles';
 import clsx from 'clsx';
 import Frame from './Frame';
 import {getEmptyFrame} from "../Editor.utils";
-import {ACTIONS} from "../Editor.constants";
+import {ACTIONS} from "../Editor.state";
 
 const Frames = forwardRef(({ setCurrentFrameData, isPlay, setIsPlay, isMultiple }, ref) => {
   const classes = useStyles();

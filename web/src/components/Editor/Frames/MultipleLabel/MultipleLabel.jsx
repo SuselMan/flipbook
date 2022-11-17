@@ -1,9 +1,9 @@
 import React, {memo, useEffect, useState} from 'react';
 import {useStyles, borderSize} from './MultipleLabel.styles';
 import clsx from 'clsx';
-import {FRAME_WIDTH, FRAME_MARGIN} from "../Frame.constants";
+import {FRAME_HEIGHT, FRAME_WIDTH, FRAME_MARGIN, LAYERS_TOOLS_WIDTH} from "../../Editor.styles";
 
-const SLICK_AREA = 20;
+const SLICK_AREA = 10;
 
 const MultipleLabel = (props) => {
     const {
@@ -22,18 +22,22 @@ const MultipleLabel = (props) => {
 
     useEffect(() => {
         setPositionByStep(count);
-    }, [count]);
+    }, [count, item.index]);
 
     useEffect(() => {
-        const moveHandler = (e) => onMouseMove(e)
+        const moveHandler = (e) => onMouseMove(e);
         const mouseUpHandler = () => {
             setPositionByStep(slickStep);
             setCount(slickStep)
-        }
+        };
         document.body.addEventListener('pointermove', moveHandler);
+        document.body.addEventListener('touchmove', moveHandler);
         document.body.addEventListener('pointerup', mouseUpHandler);
+        document.body.addEventListener('touchend', mouseUpHandler);
         return () => {
             document.body.removeEventListener('pointermove', moveHandler);
+            document.body.removeEventListener('touchmove', moveHandler);
+            document.body.removeEventListener('touchend', mouseUpHandler);
             document.body.removeEventListener('pointerup', mouseUpHandler);
         }
     });
@@ -54,6 +58,7 @@ const MultipleLabel = (props) => {
     }
 
     const setPosition = (position) => {
+        console.log(position);
         let x = position;
         if(direction === 'right') {
             x *= -1;
@@ -68,14 +73,16 @@ const MultipleLabel = (props) => {
         // TODO: refactor;
         if(isDraggable) {
             const elm = document.querySelector(`#multiple${direction}`);
-            const rect = elm.parentElement.parentElement.getBoundingClientRect();
-            let x = evt.clientX - rect[direction];
+            const rect = elm.getBoundingClientRect();
+            const clientX = evt.touches?.[0] ? evt.touches?.[0].clientX : evt.clientX;
+            let x = clientX - rect[direction];
+            console.log('evt', evt);
             if((direction === 'right' && x < 0) || (direction === 'left' && x > 0)) {
                 x = 0;
             }
 
             let closestSlickStep = Math.round(x / (FRAME_WIDTH + (FRAME_MARGIN * 2)));
-
+            console.log('closestSlickStep', closestSlickStep);
             if (direction === 'left' && closestSlickStep < -item.index) {
                 x = -item.index * (FRAME_WIDTH + (FRAME_MARGIN * 2));
                 closestSlickStep = Math.round(x / (FRAME_WIDTH + (FRAME_MARGIN * 2)));
@@ -96,12 +103,19 @@ const MultipleLabel = (props) => {
             setPosition(x);
         }
     };
-    return <div>
+    return <div
+        className={classes.container}
+        id={`multiple${direction}`}
+        style={{
+            width: FRAME_WIDTH,
+            left: `${FRAME_MARGIN + item.index * (FRAME_WIDTH + 2*FRAME_MARGIN) + LAYERS_TOOLS_WIDTH}px`
+        }}
+    >
         <button
-            id={`multiple${direction}`}
             className={clsx(classes.multipleLabel, { [classes.rightLabel]: direction === 'right' })}
-            onMouseDown={() => setIsDraggable(true)}
-            onMouseMove={onMouseMove}
+           // onMouseDown={() => setIsDraggable(true)}
+            onPointerDown={() => setIsDraggable(true)}
+            //onMouseMove={onMouseMove}
             style={{
                 [marginParameter]: `${marginValue}px`
             }}

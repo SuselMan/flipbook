@@ -2,42 +2,55 @@ import React, { memo, useState, useImperativeHandle, useEffect, forwardRef } fro
 import { useStyles } from './Canvas.styles';
 import clsx from 'clsx';
 import Konva from 'konva';
+import { initialLayer } from "../Editor.state";
 
 let isPaint = false;
 let mode = 'brush';
 let stage;
-let layer = null;
+let layers = [ { id: initialLayer.id, data: null } ];
+let currentLayerId = initialLayer.id;
+let currentLayerIndex = 0;
+let currentLayer = null;
+
 let supportLayerBefore = null;
 let supportLayerAfter = null;
 let lastLine;
 let color = '#000';
 let brushSize = 5;
 let opacity = 1;
+const DRAW_CONTAINER_ID = 'drawContainer';
 
-const Canvas = forwardRef(({  updateFrames, dataUrl, currentFrameID }, ref) => {
+const updateCurrentLayerIndex = () => {
+    currentLayerIndex = layers.findIndex(({id}) => id === currentLayerId);
+    currentLayer = layers[currentLayerIndex].data;
+}
+
+
+const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) => {
     const classes = useStyles();
-    const DRAW_CONTAINER_ID = 'drawContainer';
-
-
     useImperativeHandle(ref, () => {
         return {
-            drawImage: drawScene,
+            drawScene,
             setMode: (data) => mode = data,
             setColor: (data) => color = data,
             setBrush: (data) => brushSize = data,
             setOpacity: (data) => opacity = data,
-            clearScene
-        }
+            setCurrentLayer: (data) => { currentLayerId = data; updateCurrentLayerIndex(); },
+            clearScene,
+            clearCurrentFrame: () => {
+                clearScene();
+            }
+        };
     });
 
     const clearScene = () => {
-        layer.destroyChildren();
+        currentLayer.destroyChildren();
         supportLayerBefore.destroyChildren();
         supportLayerAfter.destroyChildren();
         supportLayerBefore.batchDraw();
         supportLayerAfter.batchDraw();
-        layer.batchDraw();
-        updateFrames(layer.toDataURL())
+        currentLayer.batchDraw();
+        onCanvasUpdated(currentLayer.toDataURL())
     }
 
     const drawImage = async (dataUrl, layer, data = {}) => {
@@ -57,21 +70,19 @@ const Canvas = forwardRef(({  updateFrames, dataUrl, currentFrameID }, ref) => {
         imageObj.src = dataUrl;
     }
 
-    const drawScene = async (dataUrl, before = [], after = []) => {
-        supportLayerBefore.destroyChildren();
-        supportLayerAfter.destroyChildren();
-        if(!before.length ) {
-            supportLayerBefore.batchDraw();
-        }
-        if(!after.length) {
-            supportLayerAfter.batchDraw();
-        }
-        if(dataUrl) {
-            drawImage(dataUrl, layer);
-        } else {
-            layer.destroyChildren();
-            layer.batchDraw();
-        }
+    const drawScene = async (layersArr, before = [], after = []) => {
+        layers = []
+        stage.destroyChildren();
+        addSupportLayers();
+
+        layersArr.forEach(({id, dataUrl}) => {
+            const konvaLayer = new Konva.Layer();
+            stage.add(konvaLayer);
+            layers.push({id, data: konvaLayer});
+            if(dataUrl) {
+                drawImage(dataUrl, konvaLayer);
+            }
+        });
         before.forEach((dataUrl, index) => {
             drawImage(dataUrl, supportLayerBefore, { opacity: 0.1 });
         });
@@ -80,19 +91,25 @@ const Canvas = forwardRef(({  updateFrames, dataUrl, currentFrameID }, ref) => {
         });
     }
 
+    const addSupportLayers = () => {
+        supportLayerBefore = new Konva.Layer();
+        supportLayerAfter = new Konva.Layer();
+        stage.add(supportLayerBefore);
+        stage.add(supportLayerAfter);
+    }
+
     const initCanvas = () => {
         stage = new Konva.Stage({
             container: DRAW_CONTAINER_ID,
             width: 1024,
             height: 600
         });
-        layer = new Konva.Layer();
-        supportLayerBefore = new Konva.Layer();
-        supportLayerAfter = new Konva.Layer();
-        stage.add(layer);
-        stage.add(supportLayerBefore);
-        stage.add(supportLayerAfter);
-        drawScene(dataUrl);
+        const newLayer = new Konva.Layer();
+        layers[currentLayerIndex].data = newLayer;
+        currentLayer = newLayer;
+        stage.add(currentLayer);
+        addSupportLayers();
+        //drawScene(dataUrl);
     }
 
 
@@ -102,12 +119,16 @@ const Canvas = forwardRef(({  updateFrames, dataUrl, currentFrameID }, ref) => {
         }
 
         // prevent scrolling on touch devices
-        evt?.evt?.preventDefault();
-
-        const pos = stage.getPointerPosition();
+        evt?.preventDefault();
+        const rect = document.querySelector(`#${DRAW_CONTAINER_ID}`).getBoundingClientRect();
+        const pos = evt ? {
+            x: (evt.clientX || evt.touches?.[0].clientX) - rect.left,
+            y: (evt.clientY || evt.touches?.[0].clientY) - rect.top
+        } : stage.getPointerPosition();
+        console.log('evt', evt);
         var newPoints = lastLine.points().concat([pos.x, pos.y]);
         lastLine.points(newPoints);
-        layer.batchDraw();
+        currentLayer.batchDraw();
     }
 
     const startDrawing = () => {
@@ -123,24 +144,26 @@ const Canvas = forwardRef(({  updateFrames, dataUrl, currentFrameID }, ref) => {
             // round cap for smoother lines
             lineCap: 'round',
             lineJoin: 'round',
-            // add point twice, so we have some drawings even on a simple click
-            points: [pos.x, pos.y, pos.x +10 , pos.y +10],
+            points: [pos.x, pos.y],
         });
-        layer.add(lastLine);
-        layer.batchDraw();
-        draw()
+        currentLayer.add(lastLine);
+        currentLayer.batchDraw();
+        draw();
+        draw();
     }
 
     const endDrawing = () => {
         isPaint = false;
-        updateFrames(layer.toDataURL())
+        onCanvasUpdated(currentLayer.toDataURL())
     }
 
     useEffect(() => {
         initCanvas();
         stage.on('mousedown touchstart', startDrawing);
-        stage.on('mousemove touchmove', draw);
-        stage.on('mouseup touchend', endDrawing);
+        document.body.addEventListener('mousemove', draw);
+        document.body.addEventListener('touchmove', draw);
+        document.body.addEventListener('mouseup', endDrawing);
+        document.body.addEventListener('touchend', endDrawing);
     }, []);
 
     return <div

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useStyles } from './Editor.styles';
+import clsx from 'clsx';
 import RoundButton from '../shared/RoundButton/RoundButton';
 import {ReactComponent as TrashIcon} from '../../shared/icons/trash.svg';
 import {ReactComponent as SaveIcon} from '../../shared/icons/save.svg';
@@ -12,9 +13,10 @@ import {ReactComponent as MultipleIcon} from '../../shared/icons/multiple.svg';
 import {ReactComponent as ClearIcon} from '../../shared/icons/clear.svg';
 import {ReactComponent as UndoIcon} from '../../shared/icons/redo.svg';
 import {ReactComponent as RedoIcon} from '../../shared/icons/undo.svg';
+import {ReactComponent as AddLayerIcon} from '../../shared/icons/add-layer.svg';
+
 import { stringNames, getString } from '../../configs/strings';
-import { TOOLS } from './Editor.constants';
-import Frames from './Frames/Frames';
+import Layers from './Layers/Layers';
 import Canvas from "./Canvas/Canvas";
 import Color from './Tools/Color/Color';
 import BrushSize from './Tools/BrushSize/BrushSize';
@@ -22,52 +24,98 @@ import Opacity from './Tools/Opacity/Opacity';
 import Shortcuts from '../../modules/Shortcuts/Shortcuts';
 import { SHORTCUTS } from '../../configs/shortcuts';
 import useStateRef from 'react-usestateref';
+import { useRecoilState, useSetRecoilState } from 'recoil';
+import { TOOLS } from './Editor.constants';
+import {
+  currentLayerAtom,
+  isPlayAtom,
+  isOnionSkinAtom,
+  selectedToolAtom,
+  selectedColorAtom,
+  brushSizeAtom,
+  opacityAtom,
+  isColorPickingAtom,
+  isOpacityPickingAtom,
+  isBrushSizePickingAtom,
+  currentFrameAtom,
+  frameSelector,
+  addLayerSelector,
+  getSliceSelector,
+  nextFrameSelector,
+  currentIndexAtom,
+  clearFrameSelector,
+} from './Editor.state';
 
 const Editor = () => {
   const classes = useStyles();
-  const framesRef = useRef();
   const canvasRef = useRef();
-  const [isPlay, setIsPlay] = useState(false);
-  const [ isMultiple, setIsMultiple, isMultipleRef] = useStateRef(false);
-  const [tool, setTool] = useState(TOOLS.BRUSH)
-  const [currentColor, setCurrentColor] = useState('#000');
-  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
-  const [isBrushTooltipOpen, setIsBrushTooltipOpen] = useState(false);
-  const [isOpacityTooltipOpen, setIsOpacityTooltipOpen] = useState(false);
-  const [brushSize, setBrushSize, brushSizeRef] = useStateRef(5);
-  const [opacity, setOpacity] = useStateRef(1);
+  const [isPlay, setIsPlay] = useRecoilState(isPlayAtom);
+  const [currentFrame, setCurrentFrame] = useRecoilState(currentFrameAtom);
+  const [currentIndex] = useRecoilState(currentIndexAtom);
+  const [slice] = useRecoilState(getSliceSelector);
+  const [currentLayer, setCurrentLayer] = useRecoilState(currentLayerAtom);
+  const [ isMultiple, setIsMultiple] = useRecoilState(isOnionSkinAtom);
+  const [tool, setTool] = useRecoilState(selectedToolAtom);
+  const [currentColor, setCurrentColor] = useRecoilState(selectedColorAtom);
+  const [isTooltipOpen, setIsTooltipOpen] = useRecoilState(isColorPickingAtom);
+  const setFrame = useSetRecoilState(frameSelector(currentFrame));
+  const addLayer = useSetRecoilState(addLayerSelector);
+  const nextFrame = useSetRecoilState(nextFrameSelector);
+  const [isBrushTooltipOpen, setIsBrushTooltipOpen] = useRecoilState(isBrushSizePickingAtom);
+  const [isOpacityTooltipOpen, setIsOpacityTooltipOpen] = useRecoilState(isOpacityPickingAtom);
+  const [brushSize, setBrushSize] = useRecoilState(brushSizeAtom);
+  const [opacity, setOpacity] = useRecoilState(opacityAtom);
+  const clearFrame = useSetRecoilState(clearFrameSelector);
 
-  const updateFrames = (dataUrl) => {
-    framesRef.current.updateFrames(dataUrl);
+  useEffect(() => {
+    canvasRef.current.setMode(tool);
+  }, [tool]);
+
+  useEffect(() => {
+    canvasRef.current.drawScene(slice);
+    canvasRef.current.setCurrentLayer(currentLayer);
+  }, [currentFrame, currentIndex]);
+
+  useEffect(() => {
+    if(isPlay) {
+      const timeout = setTimeout(() => {
+        nextFrame();
+        clearTimeout(timeout);
+      }, 100);
+    }
+  }, [isPlay, currentIndex]);
+
+
+  useEffect(() => {
+    console.log('currentFrame changed', currentFrame);
+    // Shortcuts.on(SHORTCUTS.UNDO, undo);
+    // Shortcuts.on(SHORTCUTS.REDO, redo);
+    // Shortcuts.on(SHORTCUTS.CLEAR_FRAME, clearFrame);
+    // Shortcuts.on(SHORTCUTS.DUPLICATE_FRAME, duplicateFrame);
+    // Shortcuts.on(SHORTCUTS.ONION_SKIN_TOOL, () => setIsMultiple(!isMultipleRef.current));
+    // Shortcuts.on(SHORTCUTS.ADD_FRAME, addFrame);
+    // Shortcuts.on(SHORTCUTS.REDUCE_BRUSH, reduceBrush);
+    // Shortcuts.on(SHORTCUTS.INCREASE_BRUSH, increaseBrush);
+    // Shortcuts.on(SHORTCUTS.PLAY_PAUSE,  togglePlay);
+    // Shortcuts.on(SHORTCUTS.BRUSH_TOOL, () => setTool(TOOLS.BRUSH));
+    // Shortcuts.on(SHORTCUTS.ERASER_TOOL, () => setTool(TOOLS.ERASER));
+    // Shortcuts.on(SHORTCUTS.DELETE_FRAME,  deleteFrame);
+    // Shortcuts.on(SHORTCUTS.NEXT_FRAME, () => framesRef.current.selectNextFrame());
+    // Shortcuts.on(SHORTCUTS.PREVIOUS_FRAME, () => framesRef.current.selectPreviousFrame());
+  }, []);
+
+  const onCanvasUpdated = (dataUrl) => {
+    setFrame({ dataUrl });
   }
 
-  const addFrame = (dataUrl) => {
-    framesRef.current.addFrame(dataUrl);
-  }
-
-  const deleteFrame = () => {
-    framesRef.current.deleteFrame();
-  }
-
-  const setCurrentFrameData = (dataUrl, before, after) => {
-    drawImage(dataUrl, before, after);
-  }
-
+  const undo = () => {};
+  const redo = () => {};
+  const addFrame = () => {};
+  const duplicateFrame = () => {};
   const togglePlay = () => {
-    framesRef.current.togglePlay();
-  }
-
-  const duplicateFrame = () => {
-    framesRef.current.duplicateFrame();
-  }
-
-  const drawImage = (dataUrl, before, after) => {
-    canvasRef.current.drawImage(dataUrl, before, after);
-  }
-
-  const clearFrame = () => {
-    canvasRef.current.clearScene();
-  }
+    setIsPlay(!isPlay);
+  };
+  const deleteFrame = () => {};
 
   const pickColor = (color) => {
     setCurrentColor(color.hex);
@@ -79,66 +127,28 @@ const Editor = () => {
     setBrushSize(size);
     canvasRef.current.setBrush(size);
   }
-
   const setOpacityValue = (value) => {
     setOpacity(value);
     canvasRef.current.setOpacity(value);
   }
 
-  const undo = () => {
-    framesRef.current.undo();
+  const onClearFrame = () => {
+    canvasRef.current.clearCurrentFrame();
   }
-
-  const redo = () => {
-    framesRef.current.redo();
-  }
-
-  const reduceBrush = () => {
-    let newSIze = brushSizeRef.current - 1;
-    if(newSIze < 1) newSIze = 1;
-    setBrush(newSIze)
-  }
-
-  const increaseBrush = () => {
-    let newSIze = brushSizeRef.current + 1;
-    if(newSIze > 100) newSIze = 100;
-    setBrush(newSIze)
-  }
-
-  useEffect(() => {
-    canvasRef.current.setMode(tool);
-  }, [tool]);
-
-  useEffect(() => {
-    Shortcuts.on(SHORTCUTS.UNDO, undo);
-    Shortcuts.on(SHORTCUTS.REDO, redo);
-    Shortcuts.on(SHORTCUTS.CLEAR_FRAME, clearFrame);
-    Shortcuts.on(SHORTCUTS.DUPLICATE_FRAME, duplicateFrame);
-    Shortcuts.on(SHORTCUTS.ONION_SKIN_TOOL, () => setIsMultiple(!isMultipleRef.current));
-    Shortcuts.on(SHORTCUTS.ADD_FRAME, addFrame);
-    Shortcuts.on(SHORTCUTS.REDUCE_BRUSH, reduceBrush);
-    Shortcuts.on(SHORTCUTS.INCREASE_BRUSH, increaseBrush);
-    Shortcuts.on(SHORTCUTS.PLAY_PAUSE,  togglePlay);
-    Shortcuts.on(SHORTCUTS.BRUSH_TOOL, () => setTool(TOOLS.BRUSH));
-    Shortcuts.on(SHORTCUTS.ERASER_TOOL, () => setTool(TOOLS.ERASER));
-    Shortcuts.on(SHORTCUTS.DELETE_FRAME,  deleteFrame);
-    Shortcuts.on(SHORTCUTS.NEXT_FRAME, () => framesRef.current.selectNextFrame());
-    Shortcuts.on(SHORTCUTS.PREVIOUS_FRAME, () => framesRef.current.selectPreviousFrame());
-  }, []);
 
   return <div className={classes.container}>
     <div className={classes.workArea}>
-      <div className={classes.tools}>
+      <div className={clsx(classes.tools, classes.leftTools)}>
         <RoundButton title={getString(stringNames.saveToolTitle)}><SaveIcon/></RoundButton>
         <RoundButton onClick={() => undo()} title={getString(stringNames.undoToolTitle)}><UndoIcon/></RoundButton>
         <RoundButton onClick={() => redo()} title={getString(stringNames.redoToolTitle)}><RedoIcon/></RoundButton>
       </div>
       <Canvas
-          updateFrames={updateFrames}
+          onCanvasUpdated={(data) => onCanvasUpdated(data)}
           tool={tool}
           ref={canvasRef}
       />
-      <div className={classes.tools}>
+      <div className={clsx(classes.tools, classes.rightTools)}>
         <RoundButton
             title={getString(stringNames.brushToolTitle)}
             onClick={() => setTool(TOOLS.BRUSH)}
@@ -175,21 +185,16 @@ const Editor = () => {
         />
       </div>
     </div>
-    <Frames
-        ref={framesRef}
-        setCurrentFrameData={setCurrentFrameData}
-        setIsPlay={setIsPlay}
-        isPlay={isPlay}
-        isMultiple={isMultiple}
-    />
     <div className={classes.bottomTools}>
       <RoundButton title={getString(stringNames.addFrameToolTitle)} onClick={() => {addFrame()}}>+</RoundButton>
+      <RoundButton title={getString(stringNames.addFrameToolTitle)} onClick={() => {addLayer()}}><AddLayerIcon/></RoundButton>
       <RoundButton title={getString(stringNames.duplicateFrameToolTitle)} onClick={() => {duplicateFrame()}}><DuplicateIcon/></RoundButton>
       <RoundButton title={getString(stringNames.playPauseToolTitle)} onClick={() => {togglePlay()}}>{ isPlay ? <PauseIcon/> : <PlayIcon/>}</RoundButton>
       <RoundButton title={getString(stringNames.deleteFrameToolTitle)} onClick={() => {deleteFrame()}}><TrashIcon/></RoundButton>
       <RoundButton title={getString(stringNames.onionSkinToolTitle)} isPressed={isMultiple} onClick={() => {setIsMultiple(!isMultiple)}}><MultipleIcon/></RoundButton>
-      <RoundButton title={getString(stringNames.clearToolTitle)} onClick={() => {clearFrame()}}><ClearIcon/></RoundButton>
+      <RoundButton title={getString(stringNames.clearToolTitle)} onClick={() => {onClearFrame()}}><ClearIcon/></RoundButton>
     </div>
+    <Layers/>
   </div>
 };
 
