@@ -46,7 +46,7 @@ export const useStyles = createUseStyles(theme => {
       }
     },
     small: {
-      margin: '15px 15px',
+      margin: '8px 8px',
       width: 40,
       height: 40,
       '&>*': {

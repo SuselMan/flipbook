@@ -7,17 +7,33 @@ import constants from '../../config/constants';
 import { passwordReg } from './user.validations';
 
 const UserSchema = new Schema({
-  email: {
+  // email: {
+  //   type: String,
+  //   unique: true,
+  //   required: [true, 'Email is required!'],
+  //   trim: true,
+  //   validate: {
+  //     validator(email) {
+  //       return validator.isEmail(email);
+  //     },
+  //     message: '{VALUE} is not a valid email!',
+  //   },
+  // },
+  // firstName: {
+  //   type: String,
+  //   required: [true, 'FirstName is required!'],
+  //   trim: true,
+  // },
+  // lastName: {
+  //   type: String,
+  //   required: [true, 'LastName is required!'],
+  //   trim: true,
+  // },
+  userName: {
     type: String,
-    unique: true,
-    required: [true, 'Email is required!'],
+    required: [true, 'UserName is required!'],
     trim: true,
-    validate: {
-      validator(email) {
-        return validator.isEmail(email);
-      },
-      message: '{VALUE} is not a valid email!',
-    },
+    unique: true,
   },
   password: {
     type: String,
@@ -43,6 +59,7 @@ UserSchema.pre('save', function (next) {
   }
   return next();
 });
+
 UserSchema.methods = {
   _hashPassword(password) {
     return hashSync(password);
@@ -62,7 +79,7 @@ UserSchema.methods = {
     return {
       _id: this._id,
       userName: this.userName,
-      token: `JWT ${this.createToken()}`,
+      token: `${this.createToken()}`,
     };
   },
 };

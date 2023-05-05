@@ -1,6 +1,7 @@
 export const TOOLS = {
     BRUSH: 'brush',
-    ERASER: 'eraser'
+    ERASER: 'eraser',
+    MOVE_SCREEN: 'move_screen',
 }
 
 export const FRAME_TYPES = {
@@ -34,6 +35,10 @@ export const TIMELINE_KEYS = {
     CURRENT_INDEX: 'TIMELINE/CURRENT_INDEX',
     ADD_FRAME: 'TIMELINE/ADD_FRAME',
     CLEAR_FRAME: 'TIMELINE/CLEAR_FRAME',
+    DELETE_FRAME: 'TIMELINE/DELETE_FRAME',
+    CREATE_RANGE: 'TIMELINE/CREATE_RANGE',
+    RANGE: 'TIMELINE/RANGE',
+    DELETE_LAYER: 'TIMELINE/DELETE_LAYER',
 };
 
 export const EDITOR_KEYS = {

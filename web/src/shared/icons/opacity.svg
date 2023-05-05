@@ -1,10 +1,1 @@
-<?xml version="1.0" ?><svg id="Icons" style="enable-background:new 0 0 32 32;" version="1.1" viewBox="0 0 32 32" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><style type="text/css">
-	.st0{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}
-	.st1{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-	.st2{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:6,6;}
-	.st3{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:4,4;}
-	.st4{fill:none;stroke-width:2;stroke-linecap:round;}
-	.st5{fill:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:3.1081,3.1081;}
-	
-		.st6{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:4,3;}
-</style><circle class="st0" cx="13" cy="13" r="10"/><path class="st0" d="M22.4,9.6c1.3,0.5,2.6,1.3,3.7,2.3c3.9,3.9,3.9,10.2,0,14.1s-10.2,3.9-14.1,0"/><path class="st6" d="M9.6,22.4c-1.3-3.5-0.5-7.6,2.3-10.5c2.8-2.8,6.9-3.6,10.5-2.3"/></svg>
+<?xml version="1.0" ?><svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><rect fill="none" height="256" width="256"/><path d="M35.3,103.1a96.4,96.4,0,0,1,24.8-43" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/><path d="M60.1,195.9a95.7,95.7,0,0,1-24.8-43.1" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/><path d="M152.9,220.7a94.2,94.2,0,0,1-49.7,0" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/><path d="M220.7,152.9a96.4,96.4,0,0,1-24.8,43" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/><path d="M195.9,60.1a95.7,95.7,0,0,1,24.8,43.1" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/><path d="M103.1,35.3a94.2,94.2,0,0,1,49.7,0" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/></svg>

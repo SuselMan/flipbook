@@ -58,7 +58,6 @@ const MultipleLabel = (props) => {
     }
 
     const setPosition = (position) => {
-        console.log(position);
         let x = position;
         if(direction === 'right') {
             x *= -1;
@@ -76,13 +75,11 @@ const MultipleLabel = (props) => {
             const rect = elm.getBoundingClientRect();
             const clientX = evt.touches?.[0] ? evt.touches?.[0].clientX : evt.clientX;
             let x = clientX - rect[direction];
-            console.log('evt', evt);
             if((direction === 'right' && x < 0) || (direction === 'left' && x > 0)) {
                 x = 0;
             }
 
             let closestSlickStep = Math.round(x / (FRAME_WIDTH + (FRAME_MARGIN * 2)));
-            console.log('closestSlickStep', closestSlickStep);
             if (direction === 'left' && closestSlickStep < -item.index) {
                 x = -item.index * (FRAME_WIDTH + (FRAME_MARGIN * 2));
                 closestSlickStep = Math.round(x / (FRAME_WIDTH + (FRAME_MARGIN * 2)));

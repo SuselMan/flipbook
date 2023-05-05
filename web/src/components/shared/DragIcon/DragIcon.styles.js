@@ -5,7 +5,7 @@ export const useStyles = createUseStyles(theme => {
     container: {
       width: 40,
       height: 40,
-      margin: 15,
+      margin: 8,
       border: 'none',
       cursor: 'move',
       background: 'transparent',

@@ -11,9 +11,12 @@ import {ReactComponent as PauseIcon} from '../../shared/icons/pause.svg';
 import {ReactComponent as DuplicateIcon} from '../../shared/icons/duplicate.svg';
 import {ReactComponent as MultipleIcon} from '../../shared/icons/multiple.svg';
 import {ReactComponent as ClearIcon} from '../../shared/icons/clear.svg';
-import {ReactComponent as UndoIcon} from '../../shared/icons/redo.svg';
-import {ReactComponent as RedoIcon} from '../../shared/icons/undo.svg';
+import {ReactComponent as UndoIcon} from '../../shared/icons/undo.svg';
+import {ReactComponent as RedoIcon} from '../../shared/icons/redo.svg';
 import {ReactComponent as AddLayerIcon} from '../../shared/icons/add-layer.svg';
+import {ReactComponent as MoveIcon} from '../../shared/icons/move-icon.svg';
+import {ReactComponent as ZoomInIcon} from '../../shared/icons/zoomin-icon.svg';
+import {ReactComponent as ZoomOutIcon} from '../../shared/icons/zoomout-icon.svg';
 
 import { stringNames, getString } from '../../configs/strings';
 import Layers from './Layers/Layers';
@@ -21,6 +24,7 @@ import Canvas from "./Canvas/Canvas";
 import Color from './Tools/Color/Color';
 import BrushSize from './Tools/BrushSize/BrushSize';
 import Opacity from './Tools/Opacity/Opacity';
+import Cursor from './Cursor';
 import Shortcuts from '../../modules/Shortcuts/Shortcuts';
 import { SHORTCUTS } from '../../configs/shortcuts';
 import useStateRef from 'react-usestateref';
@@ -44,6 +48,10 @@ import {
   nextFrameSelector,
   currentIndexAtom,
   clearFrameSelector,
+  deleteFrameSelector,
+  addFrameSelector,
+  layersAtom,
+  layersMap,
 } from './Editor.state';
 
 const Editor = () => {
@@ -66,15 +74,23 @@ const Editor = () => {
   const [brushSize, setBrushSize] = useRecoilState(brushSizeAtom);
   const [opacity, setOpacity] = useRecoilState(opacityAtom);
   const clearFrame = useSetRecoilState(clearFrameSelector);
+  const deleteFrame = useSetRecoilState(deleteFrameSelector);
+  const addFrame = useSetRecoilState(addFrameSelector)
+  const [layers] = useRecoilState(layersAtom);
+  const [layersM] = useRecoilState(layersMap);
 
   useEffect(() => {
     canvasRef.current.setMode(tool);
   }, [tool]);
 
   useEffect(() => {
-    canvasRef.current.drawScene(slice);
-    canvasRef.current.setCurrentLayer(currentLayer);
-  }, [currentFrame, currentIndex]);
+    if(currentFrame) {
+      canvasRef.current.drawScene(slice);
+      canvasRef.current.setCurrentLayer(currentLayer);
+    } else {
+      canvasRef.current.clearScene(true);
+    }
+  }, [currentFrame, currentIndex, layers, layersM]);
 
   useEffect(() => {
     if(isPlay) {
@@ -87,7 +103,6 @@ const Editor = () => {
 
 
   useEffect(() => {
-    console.log('currentFrame changed', currentFrame);
     // Shortcuts.on(SHORTCUTS.UNDO, undo);
     // Shortcuts.on(SHORTCUTS.REDO, redo);
     // Shortcuts.on(SHORTCUTS.CLEAR_FRAME, clearFrame);
@@ -108,14 +123,20 @@ const Editor = () => {
     setFrame({ dataUrl });
   }
 
+  const zoomIn = () => {
+    canvasRef.current.zoomIn();
+  }
+
+  const zoomOut = () => {
+    canvasRef.current.zoomOut();
+  }
+
   const undo = () => {};
   const redo = () => {};
-  const addFrame = () => {};
   const duplicateFrame = () => {};
   const togglePlay = () => {
     setIsPlay(!isPlay);
   };
-  const deleteFrame = () => {};
 
   const pickColor = (color) => {
     setCurrentColor(color.hex);
@@ -133,7 +154,7 @@ const Editor = () => {
   }
 
   const onClearFrame = () => {
-    canvasRef.current.clearCurrentFrame();
+    canvasRef.current.clearScene();
   }
 
   return <div className={classes.container}>
@@ -142,6 +163,9 @@ const Editor = () => {
         <RoundButton title={getString(stringNames.saveToolTitle)}><SaveIcon/></RoundButton>
         <RoundButton onClick={() => undo()} title={getString(stringNames.undoToolTitle)}><UndoIcon/></RoundButton>
         <RoundButton onClick={() => redo()} title={getString(stringNames.redoToolTitle)}><RedoIcon/></RoundButton>
+        <RoundButton onClick={() => setTool(TOOLS.MOVE_SCREEN)} isPressed={tool === TOOLS.MOVE_SCREEN} title={getString(stringNames.redoToolTitle)}><MoveIcon/></RoundButton>
+        <RoundButton onClick={zoomIn} title={getString(stringNames.redoToolTitle)}><ZoomInIcon/></RoundButton>
+        <RoundButton onClick={zoomOut} title={getString(stringNames.redoToolTitle)}><ZoomOutIcon/></RoundButton>
       </div>
       <Canvas
           onCanvasUpdated={(data) => onCanvasUpdated(data)}

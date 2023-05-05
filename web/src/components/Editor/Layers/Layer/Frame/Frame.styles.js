@@ -9,8 +9,10 @@ export const useStyles = createUseStyles(theme => {
       height: FRAME_HEIGHT,
       flexShrink: 0,
       flexGrow: 0,
-      margin: `8px ${FRAME_MARGIN}px`,
-      boxShadow: `6px 6px 13px ${theme.colors.dropShadowDark}, -6px -6px 13px ${theme.colors.dropShadowLight}`,
+      margin: `4px ${FRAME_MARGIN}px`,
+     // boxShadow: `6px 6px 13px ${theme.colors.dropShadowDark}, -6px -6px 13px ${theme.colors.dropShadowLight}`,
+      scrollSnapAlign: 'start',
+      scrollMargin: `${4 + 14 + FRAME_MARGIN/2}px ${FRAME_MARGIN}px 4px ${FRAME_MARGIN + 2}px`,
     },
     pointFrame: {
       position: 'relative',
@@ -18,7 +20,7 @@ export const useStyles = createUseStyles(theme => {
       height: FRAME_HEIGHT,
       flexShrink: 0,
       flexGrow: 0,
-      margin: `8px ${FRAME_MARGIN}px`,
+      margin: `4px ${FRAME_MARGIN}px`,
       cursor: 'pointer',
       borderRadius: '3px',
       display: 'flex',
@@ -95,7 +97,18 @@ export const useStyles = createUseStyles(theme => {
       height: FRAME_HEIGHT,
       flexShrink: 0,
       flexGrow: 0,
-      outline: `4px solid ${theme.colors.mainBackground}`
+      boxShadow: '3px 3px 6px -6px rgb(0 0 0 / 55%) inset',
+    },
+    index: {
+      fontSize: 10,
+      zIndex: 10,
+      position: 'absolute',
+      left: 0,
+      bottom: 0,
+      padding: '2px 4px',
+      backgroundColor: theme.colors.mainBackground,
+      color: theme.colors.mainText,
+      borderRadius: 20,
     },
     selected: {
       transition: 'none',
@@ -104,7 +117,20 @@ export const useStyles = createUseStyles(theme => {
     },
     frameImage: {
       width: '100%',
-      height: '100%'
+      height: '100%',
+      userSelect: 'none'
+    },
+    inRange: {
+      width: '100%',
+      height: '100%',
+      backgroundColor: theme.colors.selectedFrame,
+      opacity: .5,
+      position: 'absolute',
+      borderRadius: '3px',
+      mixBlendMode: 'multiply'
+    },
+    first: {
+      marginLeft: 340
     }
   }
 });

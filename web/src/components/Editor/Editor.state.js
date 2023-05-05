@@ -59,6 +59,11 @@ export const currentFrameAtom = atom({
     default: initialFrame.id,
 });
 
+export const framesRangeAtom = atom({
+    key: TIMELINE_KEYS.RANGE,
+    default: null,
+});
+
 export const currentLayerAtom = atom({
     key: TIMELINE_KEYS.CURRENT_LAYER,
     default: initialLayer.id,
@@ -93,7 +98,7 @@ export const layersAtom = atom({
     default: [ initialLayer.id ],
 });
 
-export const addFrameSelector = selectorFamily({
+export const addFrameByPositionSelector = selectorFamily({
     key: TIMELINE_KEYS.ADD_FRAME,
     get: () => {},
     set: ({ layerId, position }) => ({set, get}) => {
@@ -121,6 +126,37 @@ export const addFrameSelector = selectorFamily({
     },
 });
 
+export const addFrameSelector = selector({
+    key: TIMELINE_KEYS.ADD_FRAME,
+    get: () => {},
+    set: ({set, get}) => {
+        const maxLength = get(longestLayer);
+        const layerId = get(currentLayerAtom);
+        const currentFrameIndex = get(currentIndexAtom);
+        let frames = get(framesMap);
+        let layersObj = get(layersMap);
+        const layer = layersObj[layerId];
+        const layerFrames = [...layer.frames];
+        const newFrame = getEmptyFrame();
+        frames = { ...frames, [newFrame.id]: newFrame};
+        layerFrames.splice(currentFrameIndex + 1, 0, newFrame.id);
+        if(maxLength < layerFrames.length) {
+            set(longestLayer, layerFrames.length);
+        }
+        layersObj = {
+            ...layersObj,
+            [layer.id]: { ...layer, frames: [...layerFrames] },
+        };
+
+        set(framesMap, frames);
+        set(layersMap, layersObj);
+        set(currentFrameAtom, newFrame.id);
+        set(currentLayerAtom, layer.id);
+        set(currentIndexAtom, currentFrameIndex + 1);
+    },
+});
+
+
 export const clearFrameSelector = selector({
     key: TIMELINE_KEYS.CLEAR_FRAME,
     get: () => {},
@@ -131,6 +167,55 @@ export const clearFrameSelector = selector({
 
         frames = { ...frames, [currentFrameId]: {...frame, dataUrl: ''}};
         set(framesMap, frames);
+    },
+});
+
+export const deleteFrameSelector = selector({
+    key: TIMELINE_KEYS.DELETE_FRAME,
+    get: () => {},
+    set: ({set, get}) => {
+        const currentFrameId = get(currentFrameAtom);
+        const currentFrameIndex = get(currentIndexAtom);
+        const frames = get(framesMap);
+        const layers = get(layersMap);
+        const currentLayerId = get(currentLayerAtom);
+        const layer = [...layers[currentLayerId].frames];
+        const layersArr = get(layersAtom);
+        layer[currentFrameIndex] = undefined;
+        if (currentFrameId) {
+            const newFrames  = { ...frames };
+            delete newFrames[currentFrameId];
+            set(layersMap, {
+                ...layers,
+                [currentLayerId]: {
+                    ...layers[currentLayerId],
+                    frames: layer
+                }
+            });
+            set(framesMap, newFrames);
+            set(currentFrameAtom, null)
+        } else {
+            layer.splice(currentFrameIndex, 1);
+            set(layersMap, {
+                ...layers,
+                [currentLayerId]: {
+                    ...layers[currentLayerId],
+                    frames: layer
+                }
+            });
+            set(currentFrameAtom, layer[currentFrameIndex]?.id || null);
+            let length = 0;
+            layersArr.forEach((layerId) => {
+                const len = layerId === currentLayerId ? layer.length : layers[layerId].frames.length;
+                length = Math.max(length, len);
+            });
+            set(longestLayer, length);
+        }
+        // let currentFrameId = get(currentFrameAtom);
+        // const frame = frames[currentFrameId]
+        //
+        // frames = { ...frames, [currentFrameId]: {...frame, dataUrl: ''}};
+        // set(framesMap, frames);
     },
 });
 
@@ -151,6 +236,25 @@ export const addLayerSelector = selector({
     },
 });
 
+export const deleteLayerSelector = selector({
+    key: TIMELINE_KEYS.DELETE_LAYER,
+    get: () => {},
+    set: ({set, get}, id) => {
+        const layersObj =  {...get(layersMap)};
+        const layersArr = [...get(layersAtom)];
+        const index = layersArr.indexOf(id);
+        if (index > -1) { // only splice array when item is found
+            layersArr.splice(index, 1); // 2nd parameter means remove one item only
+        }
+        delete layersObj[id];
+        set(layersMap, layersObj);
+        set(currentLayerAtom, layersArr[index]);
+        set(layersAtom, layersArr);
+
+
+    },
+});
+
 export const getSliceSelector = selector({
     key: TIMELINE_KEYS.GET_SLICE,
     get: ({ get }) => {
@@ -160,7 +264,7 @@ export const getSliceSelector = selector({
         const layersObj = get(layersMap);
         const slice = layers.map((key) => {
             const dataUrl = frames[layersObj[key].frames[currentIndex]]?.dataUrl;
-            return { id: key, dataUrl  }
+            return { id: key, dataUrl, isVisible: layersObj[key].isVisible }
         });
         return slice.reverse();
     }
@@ -172,15 +276,52 @@ export const frameSelector = selectorFamily({
         const frame = get(framesMap)[id];
         return frame;
     },
-    set: (id) => ({set, get}, data = {}) => {
+    set: () => ({set, get}, data = {}) => {
         const currentFrame = get(currentFrameAtom);
+        const currentFrameIndex = get(currentIndexAtom);
         const frameId = data.id || currentFrame;
         const frames = get(framesMap);
-        const frame = frames[frameId];
-        const newFrame = {...frame, ...data}
-        return set(framesMap, { ...frames, [frameId]: newFrame });
+        const layers = get(layersMap);
+        const currentLayerId = get(currentLayerAtom);
+        const frame = frames[frameId] || getEmptyFrame();
+        const newFrame = {...frame, ...data};
+        set(framesMap, { ...frames, [newFrame.id]: newFrame });
+        if(!frameId) {
+            const frames = [...layers[currentLayerId].frames];
+            frames[currentFrameIndex] = newFrame.id;
+            set(layersMap, {
+                ...layers,
+                [currentLayerId]: {
+                    ...layers[currentLayerId],
+                    frames,
+                }
+            });
+            set(currentFrameAtom, frame.id);
+        }
     },
 });
+
+export const createFrameRangeSelector = selectorFamily({
+    key: TIMELINE_KEYS.CREATE_RANGE,
+    get: () => {},
+    set: ({ layerIndex, frameIndex }) => ({set, get}) => {
+        const currentFrameIndex = get(currentIndexAtom);
+        const currentLayerId = get(currentLayerAtom);
+        const layers = get(layersAtom);
+        const currentLayerIndex = layers.findIndex((id) => id === currentLayerId);
+        set(framesRangeAtom, {
+            from: {
+                frameIndex: Math.min(frameIndex,currentFrameIndex),
+                layerIndex: Math.min(layerIndex, currentLayerIndex),
+            },
+            to: {
+                frameIndex: Math.max(frameIndex,currentFrameIndex),
+                layerIndex: Math.max(layerIndex, currentLayerIndex),
+            }
+        })
+    },
+});
+
 
 export const nextFrameSelector = selector({
     key: TIMELINE_KEYS.NEXT_FRAME,
@@ -207,10 +348,12 @@ export const layerSelector = selectorFamily({
     key: TIMELINE_KEYS.LAYER_SELECTOR,
     get: (id) => ({get}) => {
         const layer = get(layersMap)[id];
-        console.log('id', layer);
         return layer;
     },
-    set: (data = {}) => ({set, get}) => {
-        // TODO: todo;
+    set: (id) => ({set, get}, data) => {
+        const layers = get(layersMap);
+        const currentLayer = layers[id];
+        const newLayer = {...currentLayer, ...data};
+        set(layersMap, {...layers, [id]: newLayer})
     },
 });

@@ -3,11 +3,12 @@ import { useStyles } from './Canvas.styles';
 import clsx from 'clsx';
 import Konva from 'konva';
 import { initialLayer } from "../Editor.state";
+import {TOOLS} from "../Editor.constants";
 
 let isPaint = false;
 let mode = 'brush';
 let stage;
-let layers = [ { id: initialLayer.id, data: null } ];
+let layers = [ { id: initialLayer.id, data: null, isVisible: true } ];
 let currentLayerId = initialLayer.id;
 let currentLayerIndex = 0;
 let currentLayer = null;
@@ -15,14 +16,17 @@ let currentLayer = null;
 let supportLayerBefore = null;
 let supportLayerAfter = null;
 let lastLine;
-let color = '#000';
+let color = '#ff00a2';
 let brushSize = 5;
 let opacity = 1;
 const DRAW_CONTAINER_ID = 'drawContainer';
+let moveOffset = {x: 0, y: 0};
+let startMovePosition = {x: 0, y: 0};
+let currentZoom = 1;
 
 const updateCurrentLayerIndex = () => {
     currentLayerIndex = layers.findIndex(({id}) => id === currentLayerId);
-    currentLayer = layers[currentLayerIndex].data;
+    currentLayer = layers[currentLayerIndex]?.data;
 }
 
 
@@ -37,20 +41,28 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
             setOpacity: (data) => opacity = data,
             setCurrentLayer: (data) => { currentLayerId = data; updateCurrentLayerIndex(); },
             clearScene,
-            clearCurrentFrame: () => {
-                clearScene();
-            }
+            zoomIn: () => setZoom(currentZoom + .1),
+            zoomOut: () => setZoom(currentZoom - .1),
         };
     });
 
-    const clearScene = () => {
+    const setZoom = (zoom) => {
+        currentZoom = zoom;
+        stage.scaleX(zoom);
+        stage.scaleY(zoom);
+        stage.batchDraw();
+    }
+
+    const clearScene = (silent) => {
         currentLayer.destroyChildren();
         supportLayerBefore.destroyChildren();
         supportLayerAfter.destroyChildren();
         supportLayerBefore.batchDraw();
         supportLayerAfter.batchDraw();
         currentLayer.batchDraw();
-        onCanvasUpdated(currentLayer.toDataURL())
+        if(!silent) {
+            onCanvasUpdated(currentLayer.toDataURL())
+        }
     }
 
     const drawImage = async (dataUrl, layer, data = {}) => {
@@ -71,15 +83,17 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
     }
 
     const drawScene = async (layersArr, before = [], after = []) => {
+        console.log('drawScene');
         layers = []
         stage.destroyChildren();
+        addPaper();
         addSupportLayers();
 
-        layersArr.forEach(({id, dataUrl}) => {
+        layersArr.forEach(({id, dataUrl, isVisible}) => {
             const konvaLayer = new Konva.Layer();
             stage.add(konvaLayer);
-            layers.push({id, data: konvaLayer});
-            if(dataUrl) {
+            layers.push({id, data: konvaLayer, isVisible });
+            if(dataUrl && isVisible) {
                 drawImage(dataUrl, konvaLayer);
             }
         });
@@ -98,40 +112,80 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
         stage.add(supportLayerAfter);
     }
 
+    const addPaper = () => {
+        const layer = new Konva.Layer();
+        const rect = new Konva.Rect({
+            x: window.innerWidth/2 - 1024/2,
+            y: 120,
+            width: 1024,
+            height: 600,
+            fill: 'white',
+            shadowColor: 'black',
+            shadowBlur: 0,
+            shadowOffset: { x: 2, y: 2 },
+            shadowOpacity: 0.02,
+        });
+        layer.add(rect);
+        stage.add(layer);
+    }
+
     const initCanvas = () => {
         stage = new Konva.Stage({
             container: DRAW_CONTAINER_ID,
-            width: 1024,
-            height: 600
+            width: window.innerWidth,
+            height: window.innerHeight,
         });
         const newLayer = new Konva.Layer();
         layers[currentLayerIndex].data = newLayer;
         currentLayer = newLayer;
         stage.add(currentLayer);
+        addPaper()
         addSupportLayers();
-        //drawScene(dataUrl);
     }
 
 
     const draw = (evt) => {
-        if (!isPaint) {
-            return;
-        }
+        if (isPaint && (layers[currentLayerIndex].isVisible || mode === TOOLS.MOVE_SCREEN)) {
 
-        // prevent scrolling on touch devices
-        evt?.preventDefault();
-        const rect = document.querySelector(`#${DRAW_CONTAINER_ID}`).getBoundingClientRect();
-        const pos = evt ? {
-            x: (evt.clientX || evt.touches?.[0].clientX) - rect.left,
-            y: (evt.clientY || evt.touches?.[0].clientY) - rect.top
-        } : stage.getPointerPosition();
-        console.log('evt', evt);
-        var newPoints = lastLine.points().concat([pos.x, pos.y]);
-        lastLine.points(newPoints);
-        currentLayer.batchDraw();
+            const x = evt.clientX || evt.touches?.[0].clientX;
+            const y = evt.clientY || evt.touches?.[0].clientY;
+
+            if (mode === TOOLS.MOVE_SCREEN) {
+                moveOffset = {
+                    x: startMovePosition.x - x,
+                    y: startMovePosition.y - y,
+                }
+                stage.offsetX(moveOffset.x);
+                stage.offsetY(moveOffset.y);
+                stage.batchDraw();
+                return;
+            }
+            // prevent scrolling on touch devices
+            evt?.preventDefault();
+            const rect = document.querySelector(`#${DRAW_CONTAINER_ID}`).getBoundingClientRect();
+            const pos = evt ? {
+                x: x + moveOffset.x - rect.left,
+                y: y + moveOffset.y - rect.top
+            } : stage.getPointerPosition();
+            var newPoints = lastLine.points().concat([pos.x, pos.y]);
+            lastLine.points(newPoints);
+            currentLayer.batchDraw();
+        }
     }
 
-    const startDrawing = () => {
+    const startDrawing = (e) => {
+        if(mode === TOOLS.MOVE_SCREEN) {
+            const evt = e.evt;
+            const x = (evt.clientX || evt.touches?.[0].clientX);
+            const y = (evt.clientY || evt.touches?.[0].clientY);
+            startMovePosition = {x,y};
+            isPaint = true;
+            return;
+        }
+        if(!layers[currentLayerIndex].isVisible) {
+            isPaint = false;
+            return;
+        }
         isPaint = true;
         const pos = stage.getPointerPosition();
         lastLine = new Konva.Line({
@@ -144,17 +198,19 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
             // round cap for smoother lines
             lineCap: 'round',
             lineJoin: 'round',
-            points: [pos.x, pos.y],
+            points: [pos.x + + moveOffset.x, pos.y + + moveOffset.y],
         });
         currentLayer.add(lastLine);
         currentLayer.batchDraw();
-        draw();
-        draw();
+        draw(e.evt);
+        draw(e.evt);
     }
 
     const endDrawing = () => {
+        if(isPaint && layers[currentLayerIndex].isVisible) {
+            onCanvasUpdated(currentLayer.toDataURL())
+        }
         isPaint = false;
-        onCanvasUpdated(currentLayer.toDataURL())
     }
 
     useEffect(() => {

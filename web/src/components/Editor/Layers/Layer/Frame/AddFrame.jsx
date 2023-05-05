@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStyles } from './Frame.styles';
 import clsx from 'clsx';
-import {addFrameSelector, frameSelector} from '../../../Editor.state';
+import {addFrameByPositionSelector, frameSelector} from '../../../Editor.state';
 import {
     RecoilRoot,
     atom,
@@ -14,8 +14,8 @@ import { currentFrameAtom, currentLayerAtom, currentIndexAtom } from '../../../E
 
 const AddFrame = ({ layerId, position }) => {
     const classes = useStyles();
-    const addFrame = useSetRecoilState(addFrameSelector({ layerId, position}));
-    return <div className={classes.pointFrame} onClick={addFrame}>
+    const addFrame = useSetRecoilState(addFrameByPositionSelector({ layerId, position}));
+    return <div className={clsx(classes.pointFrame, {[classes.first]: position === 0})} onClick={addFrame}>
         <div className={classes.point}></div>
         <span> + </span>
     </div>

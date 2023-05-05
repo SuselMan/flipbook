@@ -13,6 +13,7 @@ const themes = {
       scrollBarThumbColor: '#898989',
       dropShadowDark: '#dddfe2',
       dropShadowLight: '#f9fbfe',
+      selectedFrame: '#38B3FF'
     }
   },
   dark: {
@@ -28,7 +29,8 @@ const themes = {
       selectedOutline: '#cbcbcb',
       scrollBarThumbColor: '#494949',
       dropShadowDark: '#131313',
-      dropShadowLight: '#343434'
+      dropShadowLight: '#343434',
+      selectedFrame: '#38B3FF'
     }
   }
 }

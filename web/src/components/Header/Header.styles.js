@@ -5,10 +5,11 @@ export const HEADER_HEIGHT = 128;
 export const useStyles = createUseStyles(theme => {
   return {
     header: {
+      display: 'none',
       height: HEADER_HEIGHT,
       padding: '0 100px',
       position: 'relative',
-      zIndex:1000,
+      zIndex: 1000,
       backgroundColor: theme.colors.mainBackground,
       '& > nav': {
         width: '100%',

@@ -5,53 +5,16 @@ export const FRAME_WIDTH = 100;
 export const FRAME_HEIGHT = 50;
 export const FRAME_MARGIN = 4;
 export const LAYERS_HEIGHT = (FRAME_HEIGHT + 8) * 4;
-export const LAYERS_TOOLS_WIDTH = 300;
+export const LAYERS_TOOLS_WIDTH = 340;
+
 
 export const useStyles = createUseStyles(theme => {
   return {
-    layersPanel: {
-      position: 'absolute',
-      bottom: 0,
-      height: LAYERS_HEIGHT,
-      width: '100%',
-      border: `2px solid ${theme.colors.paper}`,
-      outline: `2px solid ${theme.colors.dropShadowDark}`
-    },
-    layerTools: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      padding: '0 20px',
-      //filter: 'brightness(1.02)',
-      //background: theme.colors.mainBackground,
-    },
-    layersTools: {
-      display: 'flex',
-      flexDirection: 'column',
-      width: LAYERS_TOOLS_WIDTH,
-      height: '100%',
-      borderRight: `1px solid ${theme.colors.dropShadowDark}`,
-    },
-    layersContainer: {
-      position: 'absolute',
-      left: LAYERS_TOOLS_WIDTH + 1,
-      height: LAYERS_HEIGHT,
-      bottom: 0,
-      overflow: 'auto',
-      width: `calc(100% - ${LAYERS_TOOLS_WIDTH + 1}px)`,
-      '&::-webkit-scrollbar': {
-        height: '10px',
-        backgroundColor: theme.colors.scrollbarBackground
-      },
-      '&::-webkit-scrollbar-thumb': {
-        backgroundColor: theme.colors.scrollBarThumbColor
-      },
-      display: 'flex',
-      flexDirection: 'column'
-    },
     container: {
       display: 'flex',
       flexDirection: 'column',
-      height: `calc(100% - ${HEADER_HEIGHT}px)`
+      height: `calc(100% - ${HEADER_HEIGHT}px)`,
+      userSelect: 'none',
     },
     paper: {
       backgroundColor: theme.colors.paper,
@@ -66,7 +29,9 @@ export const useStyles = createUseStyles(theme => {
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
-      position: 'absolute'
+      position: 'absolute',
+      backgroundColor: theme.colors.mainBackground,
+      zIndex: 1,
     },
     leftTools: {
       left: 0
@@ -80,6 +45,7 @@ export const useStyles = createUseStyles(theme => {
       bottom: LAYERS_HEIGHT,
       display: 'flex',
       justifyContent: 'center',
+      backgroundColor: theme.colors.mainBackground,
     },
     colorPicker: {
       borderRadius: '8px!important',
@@ -98,6 +64,11 @@ export const useStyles = createUseStyles(theme => {
       '&:after': {
         backgroundColor: theme.colors.paper
       }
+    },
+    cursor: {
+      border: '1px solid black',
+      borderRadius: 1000,
+      position: 'fixed',
     }
   }
 });

@@ -8,7 +8,7 @@ import User from '../modules/users/user.model';
 import constants from '../config/constants';
 
 const localOpts = {
-  usernameField: 'email',
+  usernameField: 'userName',
 };
 
 // Jwt strategy
@@ -17,10 +17,10 @@ const jwtOpts = {
   secretOrKey: constants.JWT_SECRET,
 };
 
-const localStrategy = new LocalStrategy(localOpts, async (email, password, done) => {
+const localStrategy = new LocalStrategy(localOpts, async (userName, password, done) => {
   try {
     const user = await User.findOne({
-      email,
+      userName,
     });
     if (!user) {
       return done(null, false);
@@ -34,6 +34,7 @@ const localStrategy = new LocalStrategy(localOpts, async (email, password, done)
 });
 
 const jwtStrategy = new JWTStrategy(jwtOpts, async (payload, done) => {
+  console.log('payload!', payload);
   try {
     // Identify user by ID
     const user = await User.findById(payload._id);

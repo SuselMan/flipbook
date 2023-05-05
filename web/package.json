@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@dnd-kit/core": "^6.0.5",
+    "@dnd-kit/sortable": "^7.0.1",
+    "@dnd-kit/utilities": "^3.2.0",
     "@emotion/react": "^11.10.4",
     "@emotion/styled": "^11.10.4",
     "@mui/material": "^5.10.10",
@@ -14,6 +17,7 @@
     "dexie-react-hooks": "^1.1.1",
     "dotenv-cli": "^6.0.0",
     "konva": "^7.2.5",
+    "lodash": "^4.17.21",
     "npm-watch": "^0.11.0",
     "react": "^17.0.2",
     "react-color": "^2.19.3",
