@@ -264,7 +264,8 @@ export const getSliceSelector = selector({
         const layersObj = get(layersMap);
         const slice = layers.map((key) => {
             const dataUrl = frames[layersObj[key].frames[currentIndex]]?.dataUrl;
-            return { id: key, dataUrl, isVisible: layersObj[key].isVisible }
+            const json = frames[layersObj[key].frames[currentIndex]]?.json;
+            return { id: key, dataUrl, json, isVisible: layersObj[key].isVisible }
         });
         return slice.reverse();
     }

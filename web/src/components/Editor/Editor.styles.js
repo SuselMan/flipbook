@@ -64,11 +64,6 @@ export const useStyles = createUseStyles(theme => {
       '&:after': {
         backgroundColor: theme.colors.paper
       }
-    },
-    cursor: {
-      border: '1px solid black',
-      borderRadius: 1000,
-      position: 'fixed',
     }
   }
 });

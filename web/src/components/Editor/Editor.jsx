@@ -17,6 +17,7 @@ import {ReactComponent as AddLayerIcon} from '../../shared/icons/add-layer.svg';
 import {ReactComponent as MoveIcon} from '../../shared/icons/move-icon.svg';
 import {ReactComponent as ZoomInIcon} from '../../shared/icons/zoomin-icon.svg';
 import {ReactComponent as ZoomOutIcon} from '../../shared/icons/zoomout-icon.svg';
+import BrushCursor from '../shared/BrushCursor/BrushCursor';
 
 import { stringNames, getString } from '../../configs/strings';
 import Layers from './Layers/Layers';
@@ -24,12 +25,12 @@ import Canvas from "./Canvas/Canvas";
 import Color from './Tools/Color/Color';
 import BrushSize from './Tools/BrushSize/BrushSize';
 import Opacity from './Tools/Opacity/Opacity';
-import Cursor from './Cursor';
 import Shortcuts from '../../modules/Shortcuts/Shortcuts';
 import { SHORTCUTS } from '../../configs/shortcuts';
 import useStateRef from 'react-usestateref';
 import { useRecoilState, useSetRecoilState } from 'recoil';
-import { TOOLS } from './Editor.constants';
+import { TOOLS, FINGER_OFFSET_Y, FINGER_OFFSET_X } from './Editor.constants';
+import { archiveProject } from './Editor.utils';
 import {
   currentLayerAtom,
   isPlayAtom,
@@ -52,6 +53,7 @@ import {
   addFrameSelector,
   layersAtom,
   layersMap,
+  framesMap,
 } from './Editor.state';
 
 const Editor = () => {
@@ -78,6 +80,9 @@ const Editor = () => {
   const addFrame = useSetRecoilState(addFrameSelector)
   const [layers] = useRecoilState(layersAtom);
   const [layersM] = useRecoilState(layersMap);
+  const [framesM] = useRecoilState(framesMap);
+  const [cursorPosition, setCursorPosition] = useState({x: 0, y: 0});
+  const [isBrushVisible, setIsBrushVisible] = useState(false);
 
   useEffect(() => {
     canvasRef.current.setMode(tool);
@@ -85,6 +90,7 @@ const Editor = () => {
 
   useEffect(() => {
     if(currentFrame) {
+      console.log('slice', slice);
       canvasRef.current.drawScene(slice);
       canvasRef.current.setCurrentLayer(currentLayer);
     } else {
@@ -103,6 +109,20 @@ const Editor = () => {
 
 
   useEffect(() => {
+    const canvasContainer = canvasRef.current.elementRef();
+    if(canvasContainer) {
+      canvasContainer.addEventListener('pointermove', (e) => {
+        if(!isBrushVisible) {
+          setIsBrushVisible(true);
+        }
+        const {clientX, clientY} = e;
+        setCursorPosition({x: clientX + FINGER_OFFSET_X, y: clientY - FINGER_OFFSET_Y});
+      });
+      canvasContainer.addEventListener('pointerleave', () => {
+        setIsBrushVisible(false);
+      });
+    };
+    // console.log('canvasContainer', canvasContainer);
     // Shortcuts.on(SHORTCUTS.UNDO, undo);
     // Shortcuts.on(SHORTCUTS.REDO, redo);
     // Shortcuts.on(SHORTCUTS.CLEAR_FRAME, clearFrame);
@@ -119,8 +139,8 @@ const Editor = () => {
     // Shortcuts.on(SHORTCUTS.PREVIOUS_FRAME, () => framesRef.current.selectPreviousFrame());
   }, []);
 
-  const onCanvasUpdated = (dataUrl) => {
-    setFrame({ dataUrl });
+  const onCanvasUpdated = (json, dataUrl) => {
+    setFrame({ dataUrl, json });
   }
 
   const zoomIn = () => {
@@ -130,6 +150,11 @@ const Editor = () => {
   const zoomOut = () => {
     canvasRef.current.zoomOut();
   }
+
+  const save = () => {
+    console.log(layers, layersM, framesM);
+    const project = archiveProject(layers, layersM, framesM);
+  };
 
   const undo = () => {};
   const redo = () => {};
@@ -160,15 +185,16 @@ const Editor = () => {
   return <div className={classes.container}>
     <div className={classes.workArea}>
       <div className={clsx(classes.tools, classes.leftTools)}>
-        <RoundButton title={getString(stringNames.saveToolTitle)}><SaveIcon/></RoundButton>
+        <RoundButton onClick={() => save()} title={getString(stringNames.saveToolTitle)}><SaveIcon/></RoundButton>
         <RoundButton onClick={() => undo()} title={getString(stringNames.undoToolTitle)}><UndoIcon/></RoundButton>
         <RoundButton onClick={() => redo()} title={getString(stringNames.redoToolTitle)}><RedoIcon/></RoundButton>
         <RoundButton onClick={() => setTool(TOOLS.MOVE_SCREEN)} isPressed={tool === TOOLS.MOVE_SCREEN} title={getString(stringNames.redoToolTitle)}><MoveIcon/></RoundButton>
         <RoundButton onClick={zoomIn} title={getString(stringNames.redoToolTitle)}><ZoomInIcon/></RoundButton>
         <RoundButton onClick={zoomOut} title={getString(stringNames.redoToolTitle)}><ZoomOutIcon/></RoundButton>
       </div>
+      <BrushCursor x={cursorPosition.x} y={cursorPosition.y} size={brushSize} isVisible={isBrushVisible}/>
       <Canvas
-          onCanvasUpdated={(data) => onCanvasUpdated(data)}
+          onCanvasUpdated={(json, data) => onCanvasUpdated(json, data)}
           tool={tool}
           ref={canvasRef}
       />

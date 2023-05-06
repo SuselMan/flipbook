@@ -1,9 +1,9 @@
-import React, { memo, useState, useImperativeHandle, useEffect, forwardRef } from 'react';
+import React, {memo, useState, useImperativeHandle, useEffect, forwardRef, useRef} from 'react';
 import { useStyles } from './Canvas.styles';
 import clsx from 'clsx';
 import Konva from 'konva';
 import { initialLayer } from "../Editor.state";
-import {TOOLS} from "../Editor.constants";
+import {TOOLS, FINGER_OFFSET_Y, FINGER_OFFSET_X} from "../Editor.constants";
 
 let isPaint = false;
 let mode = 'brush';
@@ -43,8 +43,11 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
             clearScene,
             zoomIn: () => setZoom(currentZoom + .1),
             zoomOut: () => setZoom(currentZoom - .1),
+            elementRef: () => elementRef?.current,
         };
     });
+
+    const elementRef = useRef();
 
     const setZoom = (zoom) => {
         currentZoom = zoom;
@@ -82,19 +85,31 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
         imageObj.src = dataUrl;
     }
 
+    const drawJSON = async (dataUrl, layer, data = {}) => {
+        layer.destroyChildren();
+        const d =  JSON.parse(dataUrl);
+        d.children.forEach((child) => {
+            const layerData = Konva.Node.create(child);
+            layer.add(layerData);
+        })
+        layer.batchDraw();
+    }
+
     const drawScene = async (layersArr, before = [], after = []) => {
-        console.log('drawScene');
+        //console.log('drawScene');
         layers = []
         stage.destroyChildren();
         addPaper();
         addSupportLayers();
 
-        layersArr.forEach(({id, dataUrl, isVisible}) => {
+        layersArr.forEach(({id, dataUrl, json,  isVisible}) => {
+            console.log('json', json);
             const konvaLayer = new Konva.Layer();
+            konvaLayer.listening(false);
             stage.add(konvaLayer);
             layers.push({id, data: konvaLayer, isVisible });
-            if(dataUrl && isVisible) {
-                drawImage(dataUrl, konvaLayer);
+            if(json && isVisible) {
+                drawJSON(json, konvaLayer);
             }
         });
         before.forEach((dataUrl, index) => {
@@ -107,13 +122,16 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
 
     const addSupportLayers = () => {
         supportLayerBefore = new Konva.Layer();
+        supportLayerBefore.listening(false)
         supportLayerAfter = new Konva.Layer();
+        supportLayerAfter.listening(false)
         stage.add(supportLayerBefore);
         stage.add(supportLayerAfter);
     }
 
     const addPaper = () => {
         const layer = new Konva.Layer();
+        layer.listening(false)
         const rect = new Konva.Rect({
             x: window.innerWidth/2 - 1024/2,
             y: 120,
@@ -167,7 +185,7 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
                 x: x + moveOffset.x - rect.left,
                 y: y + moveOffset.y - rect.top
             } : stage.getPointerPosition();
-            var newPoints = lastLine.points().concat([pos.x, pos.y]);
+            var newPoints = lastLine.points().concat([pos.x + FINGER_OFFSET_X, pos.y - FINGER_OFFSET_Y]);
             lastLine.points(newPoints);
             currentLayer.batchDraw();
         }
@@ -178,7 +196,7 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
             const evt = e.evt;
             const x = (evt.clientX || evt.touches?.[0].clientX);
             const y = (evt.clientY || evt.touches?.[0].clientY);
-            startMovePosition = {x,y};
+            startMovePosition = {x, y: y};
             isPaint = true;
             return;
         }
@@ -198,7 +216,7 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
             // round cap for smoother lines
             lineCap: 'round',
             lineJoin: 'round',
-            points: [pos.x + + moveOffset.x, pos.y + + moveOffset.y],
+            points: [pos.x + + moveOffset.x + FINGER_OFFSET_X, pos.y + + moveOffset.y - FINGER_OFFSET_Y],
         });
         currentLayer.add(lastLine);
         currentLayer.batchDraw();
@@ -208,7 +226,12 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
 
     const endDrawing = () => {
         if(isPaint && layers[currentLayerIndex].isVisible) {
-            onCanvasUpdated(currentLayer.toDataURL())
+            onCanvasUpdated(currentLayer.toJSON(),currentLayer.toDataURL({
+                x: window.innerWidth/2 - 1024/2,
+                y: 120,
+                width: 1024,
+                height: 600,
+            }))
         }
         isPaint = false;
     }
@@ -223,6 +246,7 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
     }, []);
 
     return <div
+        ref={elementRef}
         id={DRAW_CONTAINER_ID}
         className={clsx(classes.paper, classes.scene)}
     />

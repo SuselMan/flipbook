@@ -4,6 +4,9 @@ export const TOOLS = {
     MOVE_SCREEN: 'move_screen',
 }
 
+export const FINGER_OFFSET_Y = 80;
+export const FINGER_OFFSET_X = 80;
+
 export const FRAME_TYPES = {
     FRAME: 'frame',
     POINT: 'empty',
