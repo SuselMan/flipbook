@@ -21,21 +21,30 @@ export const archiveProject = async (layers, layersMap, framesMap) => {
     Object.keys(framesMap).forEach((key) => {
         frames[key] = {... framesMap[key], dataUrl: ''};
     });
-   // console.log('frames', frames);
-    if(window.CompressionStream) {
-        // eslint-disable-next-line no-undef
-        const compressedStream = await new Response(JSON.stringify({layers, layersMap, frames})).body.pipeThrough(new CompressionStream('deflate-raw'))
-        const bytes = await new Response(compressedStream).arrayBuffer();
-        console.log('deflate', bytes);
+   console.log('frames', frames);
+    // if(window.CompressionStream) {
+    //     // eslint-disable-next-line no-undef
+    //     const compressedStream = await new Response(JSON.stringify({layers, layersMap, frames})).body.pipeThrough(new CompressionStream('deflate-raw'))
+    //     const bytes = await new Response(compressedStream).arrayBuffer();
+    //     console.log('deflate', bytes);
+    //
+    //     // eslint-disable-next-line no-undef
+    //     const compressedStream2 = await new Response(JSON.stringify({layers, layersMap, frames})).body.pipeThrough(new CompressionStream('gzip'))
+    //     const bytes2 = await new Response(compressedStream2).arrayBuffer();
+    //     console.log('gzip', bytes2);
+    //    // return bytes
+    // }
 
-        // eslint-disable-next-line no-undef
-        const compressedStream2 = await new Response(JSON.stringify({layers, layersMap, frames})).body.pipeThrough(new CompressionStream('gzip'))
-        const bytes2 = await new Response(compressedStream2).arrayBuffer();
-        console.log('gzip', bytes2);
-       // return bytes
-    }
+    const options = {
+        type: 'blob',
+        compression: "DEFLATE",
+        compressionOptions: {
+            level: 9
+        }
+    };
+
     zip.file('project.json', JSON.stringify({layers, layersMap, frames}));
-    zip.generateAsync({type: 'string', compression: "DEFLATE"}).then((content) => {
-        console.log(content.length);
+    return zip.generateAsync(options).then((content) => {
+       return content;
     });
 };

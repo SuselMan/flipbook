@@ -32,6 +32,7 @@
     "recoil": "^0.7.6",
     "serve": "^14.0.1",
     "theming": "^3.3.0",
+    "tiny-storage-client": "^2.1.4",
     "uuid": "^8.3.2",
     "web-vitals": "^1.0.1"
   },

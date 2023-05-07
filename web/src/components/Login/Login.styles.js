@@ -25,7 +25,6 @@ export const useStyles = createUseStyles(theme => {
             fontSize: 20,
             padding: 20,
             lineHeight: '20px',
-            marginTop: '80px!important',
             borderRadius: '100px',
             height: '60px',
             width: '300px',
@@ -37,6 +36,36 @@ export const useStyles = createUseStyles(theme => {
             '&:active': {
                 backgroundColor: theme.colors.activeButtonBackground,
             }
+        },
+
+        googleButton: {
+            padding: 'initial',
+            backgroundColor: theme.colors.selectedFrame,
+            '&:hover': {
+                backgroundColor: theme.colors.selectedFrameHover,
+            },
+            '&:active': {
+                backgroundColor: theme.colors.selectedFrame,
+            }
+        },
+
+        first: {
+            marginTop: '80px!important'
+        },
+
+        icon: {
+            padding: '5px',
+            width: '30px',
+            height: '30px',
+            backgroundColor: theme.colors.paper,
+            borderRadius: '100px',
+        },
+
+        or: {
+            textAlign: 'center',
+            color: theme.colors.secondText,
+            fontFamily: 'Segoe UI',
+            fontSize: '20px',
         }
     }
 });

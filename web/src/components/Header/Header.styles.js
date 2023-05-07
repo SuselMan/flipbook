@@ -5,7 +5,7 @@ export const HEADER_HEIGHT = 128;
 export const useStyles = createUseStyles(theme => {
   return {
     header: {
-      display: 'none',
+     // display: 'none',
       height: HEADER_HEIGHT,
       padding: '0 100px',
       position: 'relative',

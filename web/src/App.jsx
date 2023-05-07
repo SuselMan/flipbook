@@ -3,7 +3,8 @@ import Editor from './components/Editor/Editor';
 import Header from './components/Header/Header';
 import Login from './components/Login/Login';
 import Register from './components/Register/Register';
-import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import Activation from './components/Activation/Activation';
+import { BrowserRouter as Router, Switch, Route, useLocation} from "react-router-dom";
 import { useStyles } from './App.styles';
 
 const App = (props) => {
@@ -23,6 +24,9 @@ const App = (props) => {
                     </Route>
                     <Route path="/register">
                         <Register/>
+                    </Route>
+                    <Route path="/activation/:id">
+                        <Activation/>
                     </Route>
                     <Route path="/">
                         <Editor/>

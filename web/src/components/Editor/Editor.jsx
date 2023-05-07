@@ -18,6 +18,7 @@ import {ReactComponent as MoveIcon} from '../../shared/icons/move-icon.svg';
 import {ReactComponent as ZoomInIcon} from '../../shared/icons/zoomin-icon.svg';
 import {ReactComponent as ZoomOutIcon} from '../../shared/icons/zoomout-icon.svg';
 import BrushCursor from '../shared/BrushCursor/BrushCursor';
+import { addProject } from "../../modules/API/API";
 
 import { stringNames, getString } from '../../configs/strings';
 import Layers from './Layers/Layers';
@@ -153,7 +154,9 @@ const Editor = () => {
 
   const save = () => {
     console.log(layers, layersM, framesM);
-    const project = archiveProject(layers, layersM, framesM);
+    const project = archiveProject(layers, layersM, framesM).then((data) => {
+       return addProject(data);
+    });
   };
 
   const undo = () => {};

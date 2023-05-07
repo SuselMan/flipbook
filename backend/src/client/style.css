@@ -1,0 +1,54 @@
+#auth .card {
+  display: none;
+}
+
+#auth .card:target {
+  display: block;
+}
+
+.data:empty::before {
+  font-size: 1.2rem;
+  display: inline-block;
+  margin-top: 1rem;
+}
+
+#user-info .data:empty ~ * {
+  display: none;
+}
+
+#user-info .data:empty::before {
+  content: 'You are not logged in. Please proceed login or create account.';
+}
+
+
+#user-list .data:empty::before {
+  content: 'You are not allowed to view other user data';
+}
+
+#toast {
+  position: fixed;
+  bottom: 1rem;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: transform linear 300ms, opacity linear 300ms;
+  padding: 1rem;
+  color: var(--bs-white);
+  border-radius: 0.25rem;
+  margin: 0 auto;
+  left: 0;
+  right: 0;
+  max-width: 30rem;
+}
+
+#toast.success {
+  background-color: var(--bs-success);
+}
+
+#toast.danger {
+  background-color: var(--bs-danger);
+}
+
+#toast.active {
+  transform: translateY(0);
+  opacity: 1;
+}

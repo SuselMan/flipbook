@@ -3,20 +3,26 @@ import { useStyles } from './Register.styles';
 import TextField from '@mui/material/TextField';
 import clsx from 'clsx';
 import { signUp } from '../../modules/API/API';
+import {ReactComponent as GoogleIcon} from '../../shared/icons/google.svg';
 
 const Register = () => {
     const classes = useStyles();
-    const [userName, setUserName] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [passwordRepeat, setPasswordRepeat] = useState('');
     const [isValid, setIsValid] = useState(true);
 
     const register = () => {
-        return signUp({userName, password});
+        // TODO: validate email and password
+        return signUp({email, password});
     }
 
-    const onUserNameChanged = (event) => {
-        setUserName(event.target.value)
+    const registerWithGoogle = () => {
+        window.location.href = '/api/auth/google';
+    }
+
+    const onEmailChanged = (event) => {
+        setEmail(event.target.value)
     }
 
     const onPasswordChanged = (event) => {
@@ -29,11 +35,11 @@ const Register = () => {
 
     return <div className={classes.container}>
         <TextField
-            id="User name"
-            label="Username"
+            id="Email"
+            label="Email"
             variant="standard"
-            value={userName}
-            onChange={onUserNameChanged}
+            value={email}
+            onChange={onEmailChanged}
         />
         <TextField
             id="Password1"
@@ -52,10 +58,19 @@ const Register = () => {
             onChange={onPasswordRepeatChanged}
         />
         <button
-            className={clsx(classes.loginButton)}
+            className={clsx(classes.loginButton, classes.first)}
             onClick={register}
         >
             Sign up
+        </button>
+        <div className={classes.or}>
+            or
+        </div>
+        <button
+            className={clsx(classes.loginButton, classes.googleButton)}
+            onClick={registerWithGoogle}
+        >
+            <GoogleIcon className={clsx(classes.icon)}/>
         </button>
     </div>
 }
