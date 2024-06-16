@@ -32,11 +32,23 @@ export const useStyles = createUseStyles(theme => {
       '&:last-child' :{
         marginRight: 'auto'
       },
+      '&>div' :{
+        position: 'absolute',
+        width: 120.4,
+        height: 60,
+      },
       outline: `4px solid ${theme.colors.mainBackground}`
     },
     selected: {
       transition: 'none',
       outline: `2px solid ${theme.colors.buttonBackground}`
+    },
+    image: {
+      width: '100%',
+      height: '100%',
+      left: 0,
+      top: 0,
+      position: 'absolute'
     }
   }
 });

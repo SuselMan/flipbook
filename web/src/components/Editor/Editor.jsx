@@ -1,105 +1,183 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useReducer } from 'react';
 import { useStyles } from './Editor.styles';
 import Konva from 'konva';
 import RoundButton from '../shared/RoundButton/RoundButton';
-import {ReactComponent as TrashIcon} from '../../shared/icons/trash.svg';
-import {ReactComponent as SaveIcon} from '../../shared/icons/save.svg';
-import {ReactComponent as ColorIcon} from '../../shared/icons/color.svg';
-import {ReactComponent as PenIcon} from '../../shared/icons/pen.svg';
-import {ReactComponent as EraserIcon} from '../../shared/icons/eraser.svg';
+import { ReactComponent as TrashIcon } from '../../shared/icons/trash.svg';
+import { ReactComponent as SaveIcon } from '../../shared/icons/save.svg';
+import { ReactComponent as ColorIcon } from '../../shared/icons/color.svg';
+import { ReactComponent as PenIcon } from '../../shared/icons/pen.svg';
+import { ReactComponent as EraserIcon } from '../../shared/icons/eraser.svg';
+import { ReactComponent as PlayIcon } from '../../shared/icons/play.svg';
+import { ReactComponent as PauseIcon } from '../../shared/icons/pause.svg';
+
 import Frames from './Frames/Frames';
 import * as uuid from 'uuid';
+import { Stage, Layer, Rect, Circle, Image as KonvaImage } from 'react-konva';
+
+const STAGE_WIDTH = 1024;
+const STAGE_HEIGHT = 600;
+
+const framesData =  ['']
+
+const insertItemByIndex = (arr, index, newItem) => [
+  ...arr.slice(0, index),
+  newItem,
+  ...arr.slice(index)
+]
+
+const initialState = {
+  framesData,
+  currentFrameIndex: 0,
+  currentFrame: framesData[0],
+  isPlay: false
+};
+
+const editorActionTypes = {
+  ADD_FRAME: 'ADD_FRAME',
+  SELECT_FRAME: 'SELECT_FRAME',
+  TOGGLE_PLAY: 'TOGGLE_PLAY',
+  SAVE_FRAME: 'SAVE_FRAME'
+}
+
+const reducer = (state, action) => {
+  let newFramesData = state.framesData;
+
+  switch (action.type) {
+    case editorActionTypes.ADD_FRAME:
+      newFramesData[state.currentFrameIndex] = action.payload.frameData;
+      newFramesData = insertItemByIndex(state.framesData, state.currentFrameIndex + 1, '');
+      return {
+        ...state,
+        currentFrameIndex: state.currentFrameIndex + 1,
+        currentFrame: '',
+        framesData: [...newFramesData]
+      };
+    case editorActionTypes.SELECT_FRAME:
+      if(!state.isPlay && action.payload.frameData) {
+        newFramesData[state.currentFrameIndex] = action.payload.frameData;
+      }
+      return {
+        ...state,
+        currentFrameIndex: action.payload.index,
+        currentFrame: newFramesData[action.payload.index],
+        framesData: [...newFramesData],
+      };
+    case editorActionTypes.SAVE_FRAME:
+      newFramesData[state.currentFrameIndex] = action.payload.frameData;
+      return {
+        ...state,
+        framesData: [...newFramesData],
+      };
+    case editorActionTypes.TOGGLE_PLAY:
+      let isPlay = state.framesData.length > 1 ? !state.isPlay : false;
+      console.log('isPlay', isPlay);
+      return {
+        ...state,
+        isPlay
+      };
+    default:
+      throw new Error();
+  }
+};
 
 const Editor = () => {
   const classes = useStyles();
-  const steps = [];
-  const [frames, setFrames]= useState([  btoa(uuid.v4()), ]);
-  console.log('btoa(uuid.v4())', btoa(uuid.v4()));
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const {framesData, currentFrameIndex, currentFrame, isPlay } = state;
 
-    useEffect(() => {
+  const stageRef = useRef();
+  const imageRef = useRef();
+  const layerRef = useRef();
 
-      const undo = (evt) => {
-        if (evt.ctrlKey) {
-          if(evt.key === 'z') {
-            if(steps.length <= 1) {
-              alert('Nothing to undo');
-              return;
-            }
-            steps.pop();
-            console.log('undo', steps[steps.length - 1]);
-            const img = new Image;
-            img.onload = () => {
-              context.fillStyle = "#FFF";
-              context.fillRect(0, 0, 1024, 600);
-              context.drawImage(img,0,0); // Or at whatever offset you like
-              layer.batchDraw();
-            };
-            img.src = steps[steps.length - 1];
-          }
-        }
-      }
+  let isDrawing = false;
+  let lastPointerPosition;
+  let currentTick = 0;
 
-      document.addEventListener('keyup', undo);
+  const canvas = document.createElement('canvas');
+  canvas.width = STAGE_WIDTH;
+  canvas.height = STAGE_HEIGHT;
+  const context = canvas.getContext('2d');
+  context.strokeStyle = '#000';
+  context.lineJoin = 'round';
+  context.lineWidth = 10;
 
-      console.log('conva', Konva);
-      console.log('container', document.querySelector('#container'));
-      const stage = new Konva.Stage({
-        container: 'drawContainer',
-        width: 1024,
-        height: 600
-      });
+  const addFrame = () => {
+    const payload = {
+      frameData: imageRef?.current?.toDataURL({mimeType:'image/png'})
+    }
+    dispatch({type: editorActionTypes.ADD_FRAME, payload})
+  }
 
-      const layer = new Konva.Layer();
-      stage.add(layer);
+  const setSelectedFrame = (index) => {
+    const payload = {
+      frameData: isPlay ? null : imageRef?.current?.toDataURL({mimeType:'image/png'}),
+      index
+    }
+    dispatch({type: editorActionTypes.SELECT_FRAME, payload});
+  }
 
-      const canvas = document.createElement('canvas');
-      canvas.width = stage.width();
-      canvas.height = stage.height();
+  const saveFrameData = () => {
+    const payload = {
+      frameData: imageRef?.current?.toDataURL({mimeType:'image/png'}),
+    }
+    dispatch({type: editorActionTypes.SAVE_FRAME, payload});
+  }
 
-      const image = new Konva.Image({
-        image: canvas,
-        x: 0,
-        y: 0
-      });
-      layer.add(image);
-      stage.draw();
+  let isImageLoaded = false;
 
-      const context = canvas.getContext('2d');
-      context.strokeStyle = '#000';
-      context.lineJoin = 'round';
-      context.lineWidth = 10;
+  const tick = () => {
+    if(isPlay) {
+      const nextFrameIndex = currentFrameIndex < framesData.length - 1 ? currentFrameIndex + 1 : 0;
+      setSelectedFrame(nextFrameIndex);
+    }
+  }
 
-      let isPaint = false;
-      let lastPointerPosition;
-      let mode = 'brush';
+  const toggleIsPlay = () => {
+    dispatch({type: editorActionTypes.TOGGLE_PLAY});
+  }
 
-      document.body.addEventListener('pointerdown', function(evt) {
-        isPaint = true;
+  useEffect(() => {
+    if(currentFrame) {
+      const layer = layerRef && layerRef.current;
+      const img = new Image;
+      img.onload = () => {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(img, 0, 0);
+        layer.batchDraw();
+        isImageLoaded = true;
+      };
+      img.src = currentFrame;
+    }
+  }, [state]);
+
+  useEffect(() => {
+    console.log('is play changed now it is', isPlay)
+    if(isPlay) {
+      setTimeout(() => tick(), 60)
+    }
+  }, [isPlay, currentFrameIndex]);
+
+  useEffect(() => {
+    const stage = stageRef && stageRef.current;
+    const image = imageRef && imageRef.current;
+    const layer = layerRef && layerRef.current;
+
+    if (stage && image && layer) {
+
+      document.body.addEventListener('pointerdown', function (evt) {
+        isDrawing = true;
         lastPointerPosition = stage.getPointerPosition();
       });
 
-      document.body.addEventListener('pointerup', function() {
-        isPaint = false;
-        steps.push(image.toDataURL());
-        if(steps > 20) {
-          steps.shift();
-        }
-        console.log('steps', steps);
+      document.body.addEventListener('pointerup', function () {
+        isDrawing = false;
       });
 
       const draw = (evt) => {
-        if (!isPaint) {
-          return;
-        }
+        if (!isDrawing) return;
 
         context.lineWidth = (evt.pressure || 1) * 15;
-
-        if (mode === 'brush') {
-          context.globalCompositeOperation = 'source-over';
-        }
-        if (mode === 'eraser') {
-          context.globalCompositeOperation = 'destination-out';
-        }
+        context.globalCompositeOperation = 'source-over';
         context.beginPath();
 
         lastPointerPosition = lastPointerPosition || stage.getPointerPosition();
@@ -108,6 +186,7 @@ const Editor = () => {
           x: lastPointerPosition.x - image.x(),
           y: lastPointerPosition.y - image.y()
         };
+
         context.moveTo(localPos.x, localPos.y);
         const pos = stage.getPointerPosition();
         localPos = {
@@ -123,22 +202,35 @@ const Editor = () => {
       }
 
       document.body.addEventListener('pointermove', draw);
-    })
+
+    }
+  });
+  console.log('isPlay', isPlay);
   return <div className={classes.container}>
     <div className={classes.workArea}>
       <div className={classes.tools}>
-        <RoundButton onClick={() => {setFrames(frames.concat([btoa(uuid.v4())]))}}>+</RoundButton>
+        <RoundButton onClick={() => addFrame()}>+</RoundButton>
         <RoundButton><TrashIcon/></RoundButton>
         <RoundButton><SaveIcon/></RoundButton>
       </div>
-      <div id="drawContainer" className={classes.paper}></div>
+      <Stage className={classes.paper} width={STAGE_WIDTH} height={STAGE_HEIGHT} ref={stageRef}>
+          <Layer ref={layerRef}>
+            <KonvaImage
+              image={canvas}
+              ref={imageRef}
+            />
+          </Layer>
+      </Stage>
       <div className={classes.tools}>
         <RoundButton><PenIcon/></RoundButton>
         <RoundButton><EraserIcon/></RoundButton>
         <RoundButton><ColorIcon/></RoundButton>
       </div>
     </div>
-    <Frames frames={frames}/>
+    <Frames currentFrameIndex={currentFrameIndex} frames={framesData} setSelectedFrame={setSelectedFrame}/>
+    <div className={classes.controls}>
+      <RoundButton onClick={() => toggleIsPlay()}>{isPlay ? <PauseIcon/> : <PlayIcon/>}</RoundButton>
+    </div>
   </div>
 };
 
