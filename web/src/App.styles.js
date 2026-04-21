@@ -10,6 +10,7 @@ export const useStyles = createUseStyles(theme => {
       },
       body: {
         background: theme.colors.mainBackground,
+        color: theme.colors.mainText,
         margin: 0,
         fontFamily: `-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',

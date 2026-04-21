@@ -10,6 +10,13 @@ export const LAYERS_TOOLS_WIDTH = 340;
 
 export const useStyles = createUseStyles(theme => {
   return {
+    preloader: {
+      fill: theme.colors.buttonBackground,
+      stroke: theme.colors.buttonBackground,
+      width: 200,
+      height: 200,
+      margin: 'auto',
+    },
     container: {
       display: 'flex',
       flexDirection: 'column',
@@ -64,6 +71,21 @@ export const useStyles = createUseStyles(theme => {
       '&:after': {
         backgroundColor: theme.colors.paper
       }
-    }
+    },
+
+    saveContainer: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+
+    preview: {
+       border: `1px solid ${theme.colors.secondText}`,
+        margin: '20px 0 40px 0',
+    },
+
+    saveForm: {
+      display: 'flex',
+      justifyContent: 'space-between',
+    },
   }
 });

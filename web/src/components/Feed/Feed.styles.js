@@ -1,71 +1,148 @@
 import { createUseStyles } from 'react-jss';
 
-export const useStyles = createUseStyles(theme => {
-    return {
-        container: {
-            backgroundColor: theme.colors.paper,
-            padding: 100,
-            display: 'flex',
-            flexDirection: 'column',
-            fontSize: 20,
-            borderRadius: 5,
-            '& > *': {
-                margin: '20px 0!important',
-                width: '300px'
-            },
-            alignItems: 'center',
-            boxShadow: '20px 20px 41px #dddfe2, -20px -20px 41px #f9fbfe',
-            width: '500px',
-            margin: 'auto'
+export const useStyles = createUseStyles(theme => ({
+    container: {
+        padding: 24,
+        color: theme.colors?.mainText || '#333',
+        maxWidth: 1200,
+        margin: '0 auto',
+    },
+    topRow: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+        flexWrap: 'wrap',
+        gap: 12,
+    },
+    tabs: {
+        display: 'flex',
+        gap: 8,
+        fontSize: 18,
+    },
+    tab: {
+        padding: '8px 16px',
+        borderRadius: 8,
+        textDecoration: 'none',
+        color: 'inherit',
+        opacity: 0.6,
+    },
+    tabActive: {
+        padding: '8px 16px',
+        borderRadius: 8,
+        textDecoration: 'none',
+        color: 'inherit',
+        backgroundColor: theme.colors?.buttonBackground || '#333',
+    },
+    scopeToggle: {
+        display: 'inline-flex',
+        border: `1px solid ${theme.colors?.selectedFrame || '#444'}`,
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+    scope: {
+        padding: '8px 14px',
+        border: 'none',
+        background: 'transparent',
+        color: 'inherit',
+        cursor: 'pointer',
+        fontSize: 14,
+        opacity: 0.7,
+        '&:disabled': { cursor: 'not-allowed', opacity: 0.35 },
+    },
+    scopeActive: {
+        padding: '8px 14px',
+        border: 'none',
+        background: theme.colors?.buttonBackground || '#333',
+        color: 'inherit',
+        cursor: 'pointer',
+        fontSize: 14,
+    },
+    banner: {
+        background: 'rgba(255, 200, 100, 0.15)',
+        color: theme.colors?.mainText || '#333',
+        padding: 16,
+        borderRadius: 8,
+        marginBottom: 16,
+        textAlign: 'center',
+    },
+    grid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+        gap: 16,
+    },
+    card: {
+        backgroundColor: theme.colors?.paper || '#222',
+        borderRadius: 8,
+        overflow: 'hidden',
+        color: 'inherit',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'transform 0.15s',
+        '&:hover': {
+            transform: 'translateY(-2px)',
         },
-        loginButton: {
-            backgroundColor: theme.colors.buttonBackground,
-            color: theme.colors.paper,
-            border: 'none',
-            fontSize: 20,
-            padding: 20,
-            lineHeight: '20px',
-            borderRadius: '100px',
-            height: '60px',
-            width: '300px',
-            fontFamily: 'Segoe UI',
-            cursor: 'pointer',
-            '&:hover': {
-                backgroundColor: theme.colors.hoverButtonBackground,
-            },
-            '&:active': {
-                backgroundColor: theme.colors.activeButtonBackground,
-            }
-        },
-
-        googleButton: {
-            padding: 'initial',
-            backgroundColor: theme.colors.selectedFrame,
-            '&:hover': {
-                backgroundColor: theme.colors.selectedFrameHover,
-            },
-            '&:active': {
-                backgroundColor: theme.colors.selectedFrame,
-            }
-        },
-
-        first: {
-            marginTop: '80px!important'
-        },
-
-        icon: {
-            padding: '5px',
-            width: '30px',
-            height: '30px',
-            backgroundColor: theme.colors.paper,
-            borderRadius: '100px',
-        },
-
-        or: {
-            textAlign: 'center',
-            color: theme.colors.secondText,
-            fontFamily: 'Segoe UI',
-            fontSize: '20px',
-        }
-    }
-});
+    },
+    thumbWrap: {
+        aspectRatio: '16 / 10',
+        backgroundColor: '#fff',
+        overflow: 'hidden',
+        display: 'block',
+    },
+    thumb: {
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        display: 'block',
+    },
+    thumbPlaceholder: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#444',
+    },
+    meta: {
+        padding: '12px 12px 4px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 8,
+    },
+    name: {
+        fontWeight: 500,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        color: 'inherit',
+        textDecoration: 'none',
+        flex: 1,
+        '&:hover': { textDecoration: 'underline' },
+    },
+    author: {
+        padding: '4px 12px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        color: 'inherit',
+        textDecoration: 'none',
+        opacity: 0.8,
+        fontSize: 13,
+        '&:hover': { opacity: 1 },
+    },
+    authorName: {
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+    },
+    flag: {
+        fontSize: 14,
+    },
+    error: {
+        color: '#ff5656',
+        padding: 16,
+    },
+    status: {
+        opacity: 0.6,
+        textAlign: 'center',
+        padding: 24,
+    },
+}));

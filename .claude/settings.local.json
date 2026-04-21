@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(yarn --version)",
+      "Bash(yarn install *)",
+      "Bash(NODE_OPTIONS=--openssl-legacy-provider BROWSER=none yarn start)",
+      "Bash(cat C:\\\\\\\\Users\\\\\\\\Ilya\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--projects-flipbook\\\\\\\\9ffbd4f8-c0aa-4a92-88ee-0f8d54e82a2a\\\\\\\\tasks\\\\\\\\b5yfc15nc.output)",
+      "Bash(nvm list *)",
+      "Bash(nvm use *)",
+      "Bash(yarn start *)",
+      "Bash(BROWSER=none /c/nvm/v16.14.0/node.exe ./node_modules/react-scripts/bin/react-scripts.js start)",
+      "Bash(curl *)",
+      "Bash(node ./src/index.js)",
+      "Bash(tasklist)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill *)",
+      "Bash(awk '{print $5}')",
+      "Bash(yarn add *)",
+      "Bash(yarn remove *)",
+      "Bash(BROWSER=none yarn start)",
+      "Bash(tasklist //fi \"PID eq 19504\")",
+      "Bash(PORT=3001 BROWSER=none yarn start)",
+      "Bash(mongosh --quiet --eval 'use\\(\"test_b\"\\); db.dropDatabase\\(\\);')",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

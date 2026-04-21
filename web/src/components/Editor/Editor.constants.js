@@ -4,8 +4,8 @@ export const TOOLS = {
     MOVE_SCREEN: 'move_screen',
 }
 
-export const FINGER_OFFSET_Y = 80;
-export const FINGER_OFFSET_X = 80;
+export const FINGER_OFFSET_Y = 0;
+export const FINGER_OFFSET_X = 0;
 
 export const FRAME_TYPES = {
     FRAME: 'frame',
@@ -42,6 +42,10 @@ export const TIMELINE_KEYS = {
     CREATE_RANGE: 'TIMELINE/CREATE_RANGE',
     RANGE: 'TIMELINE/RANGE',
     DELETE_LAYER: 'TIMELINE/DELETE_LAYER',
+};
+
+export const HISTORY_KEYS = {
+    HISTORY: 'EDITOR/HISTORY',
 };
 
 export const EDITOR_KEYS = {

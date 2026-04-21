@@ -8,6 +8,7 @@ import RoundButton from '../../../shared/RoundButton/RoundButton';
 import { stringNames, getString } from '../../../../configs/strings';
 import DragIcon from '../../../shared/DragIcon/DragIcon';
 import {deleteLayerSelector, layerSelector} from "../../Editor.state";
+import { useCommit } from '../../../../hooks/useHistory';
 
 import {
     RecoilRoot,
@@ -22,12 +23,14 @@ const LayerTools = forwardRef((props, ref) => {
     const {id, index, scrollPosition, setActivatorNodeRef, listeners} = props;
     const [layer, setLayer] = useRecoilState(layerSelector(id));
     const deleteLayer = useSetRecoilState(deleteLayerSelector);
+    const commit = useCommit();
     const classes = useStyles();
     return <div className={classes.layerTools} style={{ marginLeft: `${scrollPosition}px` }}>
         <RoundButton isPressed={!layer.isVisible} type='small' title={getString(stringNames.clearToolTitle)} onClick={() => {
             setLayer({ isVisible: !layer.isVisible })
         }}>{layer.isVisible ? <EyeIcon/> : <ClosedEyeIcon/>}</RoundButton>
-        <RoundButton type='small' title={getString(stringNames.clearToolTitle)} onClick={() => {
+        <RoundButton type='small' title={getString(stringNames.clearToolTitle)} onClick={async () => {
+            await commit();
             deleteLayer(id);
         }}><TrashIcon/></RoundButton>
         <RoundButton type='small' title={getString(stringNames.clearToolTitle)} onClick={() => {}}><SupportLayerIcon/></RoundButton>

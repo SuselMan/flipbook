@@ -19,7 +19,7 @@ app.use(
         contentSecurityPolicy: {
             useDefaults: true,
             directives: {
-                scriptSrc: ['\'self\'', '\'unsafe-inline\''],
+                scriptSrc: ['\'self\'', '\'unsafe-inline\'', '\'unsafe-eval\''],
             },
         }
     })
@@ -37,6 +37,7 @@ mongoose
     .then(() => {
         console.log('MongoDB Connected!');
         mongoStatus = true;
+        require('./services/hotScore').start();
     })
     .catch((error) => {
         console.log(error);
@@ -44,6 +45,13 @@ mongoose
     });
 
 require('./config/passport');
+
+const storage = require('./services/storage');
+app.use('/files', express.static(storage.ROOT, {
+    fallthrough: false,
+    maxAge: '1d',
+}));
+
 app.use(routes);
 
 app.use(express.static(path.resolve(__dirname, '../../web/build')));

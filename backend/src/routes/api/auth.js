@@ -12,7 +12,16 @@ const limiter = require('../../middleware/limiter');
 const keys = require('../../config/keys');
 
 const { secret, tokenLife } = keys.jwt;
-const { User, TemporaryUser } = UserModel;
+const { User } = UserModel;
+
+const USERNAME_RE = /^[a-z0-9_-]{3,32}$/;
+const COUNTRY_RE = /^[A-Z]{2}$/;
+const RESERVED_USERNAMES = new Set([
+  'admin', 'api', 'www', 'root', 'me', 'user', 'users', 'feed',
+  'project', 'projects', 'editor', 'settings', 'login', 'register',
+  'logout', 'signin', 'signup', 'signout', 'help', 'support', 'about',
+  'anonymous', 'null', 'undefined',
+]);
 
 router.post('/login', limiter(), async (req, res) => {
   const email = req.body.email;
@@ -52,6 +61,8 @@ router.post('/login', limiter(), async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
+        username: user.username,
+        displayName: user.displayName,
         role: user.role
       }
     });
@@ -59,73 +70,75 @@ router.post('/login', limiter(), async (req, res) => {
 });
 
 router.post('/register', limiter(), async (req, res) => {
-  const email = req.body.email;
+  const email = String(req.body.email || '').trim().toLowerCase();
   const password = req.body.password;
+  const usernameRaw = String(req.body.username || '').trim().toLowerCase();
+  const displayName = String(req.body.displayName || '').trim().slice(0, 50);
+  const country = req.body.country ? String(req.body.country).toUpperCase() : null;
 
   if (!email) {
     return res.status(400).json({ error: 'You must enter an email address.' });
   }
-
-  if (!password) {
-    return res.status(400).json({ error: 'You must enter a password.' });
+  if (!password || password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+  }
+  if (!usernameRaw || !USERNAME_RE.test(usernameRaw)) {
+    return res.status(400).json({ error: 'Username must be 3-32 chars (a-z, 0-9, _, -).' });
+  }
+  if (RESERVED_USERNAMES.has(usernameRaw)) {
+    return res.status(400).json({ error: 'That username is reserved.' });
+  }
+  if (country && !COUNTRY_RE.test(country)) {
+    return res.status(400).json({ error: 'Invalid country code.' });
   }
 
   const existingUser = await User.findOne({ email });
-  const existingTemporaryUser = await TemporaryUser.findOne({ email });
-  if (existingUser || existingTemporaryUser) {
-    return res
-      .status(400)
-      .json({ error: 'That email address is already in use.' });
+  if (existingUser) {
+    return res.status(400).json({ error: 'That email address is already in use.' });
   }
 
-  const activationId = uuid.v4();
+  const existingUsername = await User
+    .findOne({ username: usernameRaw })
+    .collation({ locale: 'en', strength: 2 });
+  if (existingUsername) {
+    return res.status(400).json({ error: 'That username is already taken.' });
+  }
+
   const salt = await bcrypt.genSalt(10);
   const hash = await bcrypt.hash(password, salt);
 
-  console.log('activationId', activationId);
-
-  const temporaryUser = new TemporaryUser({
+  const user = new User({
     email,
     password: hash,
-    activationId,
+    username: usernameRaw,
+    displayName: displayName || usernameRaw,
+    country,
+    countryChangedAt: country ? new Date() : null,
   });
+  try {
+    await user.save();
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ error: 'That username or email is already in use.' });
+    }
+    throw err;
+  }
 
-  await temporaryUser.save()
-
-  // TODO: add email;
-  //await mailer.sendMail(temporaryUser.email, 'activate', activationId);
-
-  res.status(200).json({
-    success: true,
-    message: 'Please check your email for the link to activate your account.'
+  const payload = { id: user.id };
+  jwt.sign(payload, secret, { expiresIn: tokenLife }, (error, token) => {
+    res.status(201).json({
+      success: true,
+      token: `Bearer ${token}`,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        displayName: user.displayName,
+        role: user.role,
+      },
+    });
   });
 });
-
-router.get('/activate/:activationId', async (req, res) => {
-  console.log('activate');
-  const { activationId } = req.params;
-  const temporaryUser = await TemporaryUser.findOneAndDelete({ activationId });
-  if (!temporaryUser) {
-    return res.status(400).json({error: 'Invalid activation link.'});
-  }
-  const user = new User({
-    email: temporaryUser.email,
-    password: temporaryUser.password,
-  });
-
-  await user.save();
-  //await mailer.sendMail(user.email, 'signup', user);
-
-  const payload = {
-    id: user.id
-  };
-
-  jwt.sign(payload, secret, { expiresIn: tokenLife }, (error, token) => {
-    const jwt = `Bearer ${token}`;
-
-    res.status(200).json({jwt});
-  });
-})
 
 router.post('/forgot', limiter(), async (req, res) => {
   const email = req.body.email;

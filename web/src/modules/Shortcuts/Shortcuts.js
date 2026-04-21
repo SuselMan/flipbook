@@ -1,108 +1,143 @@
-import { shortcuts } from '../../configs/shortcuts';
+import { DEFAULT_SHORTCUTS } from '../../configs/shortcuts';
+import { eventToCombo, isModifierOnly, matchesCombo } from './combo';
 
-const modKeys = ['Control', 'Shift', 'Alt', 'Meta', 'Command'];
-const emptyShortcut = { key: '', code: '', ctrlKey: false, shiftKey: false, altKey: false, metaKey: false };
+const STORAGE_KEY = 'hotkeys';
 
-class ShortcutsHandler {
+const loadOverrides = () => {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return (parsed && typeof parsed === 'object') ? parsed : {};
+    } catch { return {}; }
+};
+
+const saveOverrides = (overrides) => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides)); } catch {}
+};
+
+const shouldIgnoreTarget = (target) => {
+    if (!target) return false;
+    const tag = target.nodeName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (target.isContentEditable) return true;
+    return false;
+};
+
+class ShortcutsManager {
     constructor() {
-        this.currentShortcut = { ...emptyShortcut };
-        this.onKeyDown = this.onKeyDown.bind(this);
-        this.onKeyUp = this.onKeyUp.bind(this);
-
-        window.document.addEventListener('keydown', this.onKeyDown);
-        window.document.addEventListener('keyup', this.onKeyUp);
-        this.listeners = {
-
-        };
-    }
-
-    on(name, callback) {
-        if(!this.listeners[name]) {
-            this.listeners[name] = [];
-        }
-        this.listeners[name].push(callback);
-    }
-
-    triggerShortcut(name) {
-        if(this.listeners[name] && this.listeners[name].length) {
-            this.listeners[name].forEach(callback => callback());
+        this.overrides = loadOverrides();
+        this.handlers = new Map();         // action -> handler fn
+        this.captureCallback = null;
+        this.subscribers = new Set();
+        this._onKeyDown = this._onKeyDown.bind(this);
+        if (typeof document !== 'undefined') {
+            document.addEventListener('keydown', this._onKeyDown);
         }
     }
 
-    _transformCode(evt) {
-        switch (evt.code) {
-            case 'NumpadEnter':
-                return 'Enter';
-            case 'NumpadDivide':
-                return 'Slash';
-            default:
-                return evt.code;
+    on(action, handler) { this.handlers.set(action, handler); }
+    off(action) { this.handlers.delete(action); }
+
+    getBinding(action) {
+        return this.overrides[action] !== undefined
+            ? this.overrides[action]
+            : DEFAULT_SHORTCUTS[action] || '';
+    }
+
+    getAllBindings() {
+        const out = {};
+        for (const action of Object.keys(DEFAULT_SHORTCUTS)) {
+            out[action] = this.getBinding(action);
+        }
+        return out;
+    }
+
+    // Return action currently bound to `combo` (skip `skipAction` — used when rebinding).
+    findConflict(combo, skipAction = null) {
+        if (!combo) return null;
+        const all = this.getAllBindings();
+        for (const [action, bound] of Object.entries(all)) {
+            if (action === skipAction) continue;
+            if (bound === combo) return action;
+        }
+        return null;
+    }
+
+    setBinding(action, combo) {
+        if (!combo) {
+            delete this.overrides[action];
+            this.overrides[action] = '';    // explicit unbind
+        } else {
+            this.overrides[action] = combo;
+        }
+        saveOverrides(this.overrides);
+        this._notify();
+    }
+
+    resetBinding(action) {
+        delete this.overrides[action];
+        saveOverrides(this.overrides);
+        this._notify();
+    }
+
+    resetAll() {
+        this.overrides = {};
+        saveOverrides(this.overrides);
+        this._notify();
+    }
+
+    subscribe(fn) {
+        this.subscribers.add(fn);
+        return () => this.subscribers.delete(fn);
+    }
+
+    startCapture(cb) { this.captureCallback = cb; }
+    cancelCapture() { this.captureCallback = null; }
+
+    _notify() {
+        for (const fn of this.subscribers) {
+            try { fn(); } catch {}
         }
     }
 
-    onKeyDown(evt) {
-        if (!evt.isTrusted) return;
-        if (evt.target.nodeName === 'INPUT'
-            || evt.target.nodeName === 'TEXTAREA'
-            || evt.target.contentEditable === 'true') {
+    _onKeyDown(e) {
+        if (!e.isTrusted) return;
+
+        // Capture mode: first non-modifier keydown becomes the combo.
+        if (this.captureCallback) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                const cb = this.captureCallback;
+                this.captureCallback = null;
+                cb(null);   // null = cancelled
+                return;
+            }
+            if (isModifierOnly(e)) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const combo = eventToCombo(e);
+            const cb = this.captureCallback;
+            this.captureCallback = null;
+            cb(combo);
             return;
         }
 
-        if (evt.ctrlKey) this.currentShortcut.ctrlKey = true;
-        if (evt.shiftKey) this.currentShortcut.shiftKey = true;
-        if (evt.altKey) this.currentShortcut.altKey = true;
-        if (evt.metaKey) this.currentShortcut.metaKey = true;
+        if (shouldIgnoreTarget(e.target)) return;
 
-        if (modKeys.indexOf(evt.key) < 0) {
-            this.currentShortcut.key = evt.key;
-            this.currentShortcut.code = this._transformCode(evt);
-            const scName = this._findShortcutName(this.currentShortcut);
-            if (scName) {
-                this.triggerShortcut(scName);
-                evt.preventDefault();
+        for (const [action, handler] of this.handlers) {
+            const combo = this.getBinding(action);
+            if (matchesCombo(e, combo)) {
+                e.preventDefault();
+                e.stopPropagation();
+                handler(e);
+                return;
             }
-            this.currentShortcut = { ...emptyShortcut };
         }
-    }
-
-    onKeyUp(evt) {
-        if (!evt.isTrusted) return;
-
-        const releasedShortcut = {
-            key: '',
-            code: '',
-            ctrlKey: false
-        };
-
-        releasedShortcut.key = evt.key;
-        releasedShortcut.code = this._transformCode(evt);
-        releasedShortcut.onKeyUp = true;
-
-        if (evt.ctrlKey) releasedShortcut.ctrlKey = true;
-        const scName = this._findShortcutName(releasedShortcut);
-        this.triggerShortcut(scName);
-        evt.preventDefault();
-
-        this.currentShortcut = { ...emptyShortcut };
-    }
-
-    _findShortcutName(shortcut) {
-        let result = null;
-        Object.keys(shortcuts).forEach((scName) => {
-            if (shortcuts[scName] && shortcut.code === shortcuts[scName].code) {
-                if (!!shortcut.ctrlKey === !!shortcuts[scName].ctrlKey
-                    && !!shortcut.shiftKey === !!shortcuts[scName].shiftKey
-                    && !!shortcut.altKey === !!shortcuts[scName].altKey
-                    && !!shortcut.metaKey === !!shortcuts[scName].metaKey
-                    && !!shortcut.onKeyUp === !!shortcuts[scName].onKeyUp
-                ) {
-                    result = scName;
-                }
-            }
-        });
-        return result;
     }
 }
 
-const ShortCuts = new ShortcutsHandler();
-export default ShortCuts;
+const instance = typeof window === 'undefined' ? null : new ShortcutsManager();
+
+export default instance;
+export { ShortcutsManager };

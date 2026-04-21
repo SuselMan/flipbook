@@ -48,7 +48,8 @@ const Frame = (props) => {
             onContextMenu={(e) => e.preventDefault()}
         >
             {isFrameInRange && <div className={classes.inRange}/>}
-            {frame.dataUrl && <img
+            {frame?.dataUrl && <img
+                alt=""
                 className={classes.frameImage}
                 src={frame.dataUrl}
             />}

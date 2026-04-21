@@ -16,7 +16,8 @@ const themes = {
       dropShadowLight: '#f9fbfe',
       selectedFrame: '#38B3FF',
       selectedFrameHover: '#54bdff',
-      error: '#e5005d'
+      error: '#e5005d',
+      modalBackground: 'rgba(0, 0, 0, 0.5)',
     }
   },
   dark: {
@@ -35,7 +36,8 @@ const themes = {
       dropShadowDark: '#131313',
       dropShadowLight: '#343434',
       selectedFrame: '#38B3FF',
-      error: '#e5005d'
+      error: '#e5005d',
+      modalBackground: 'rgba(0, 0, 0, 0.5)',
     }
   }
 }

@@ -41,9 +41,17 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
             setOpacity: (data) => opacity = data,
             setCurrentLayer: (data) => { currentLayerId = data; updateCurrentLayerIndex(); },
             clearScene,
-            zoomIn: () => setZoom(currentZoom + .1),
-            zoomOut: () => setZoom(currentZoom - .1),
+            zoomIn: () => setZoom(Math.min(5, currentZoom + .1)),
+            zoomOut: () => setZoom(Math.max(0.1, currentZoom - .1)),
+            zoomReset: () => setZoom(1),
             elementRef: () => elementRef?.current,
+            getPreview: () => stage.toDataURL({
+                x: window.innerWidth/2 - 1024/2,
+                y: 120,
+                width: 1024,
+                height: 600,
+                pixelRatio: 0.5,
+            }),
         };
     });
 
@@ -226,12 +234,15 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
 
     const endDrawing = () => {
         if(isPaint && layers[currentLayerIndex].isVisible) {
-            onCanvasUpdated(currentLayer.toJSON(),currentLayer.toDataURL({
+            const data = currentLayer.toDataURL({
+                mimeType: 'image/webp',
                 x: window.innerWidth/2 - 1024/2,
+                quality: 0.1,
                 y: 120,
                 width: 1024,
                 height: 600,
-            }))
+            });
+            onCanvasUpdated(currentLayer.toJSON(), data)
         }
         isPaint = false;
     }

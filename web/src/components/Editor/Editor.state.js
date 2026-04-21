@@ -1,7 +1,12 @@
 import * as uuid from 'uuid';
 import { getEmptyFrame, getEmptyLayer } from './Editor.utils';
 import { atom, selector, selectorFamily } from 'recoil';
-import { TOOLS, TIMELINE_KEYS, EDITOR_KEYS, FRAME_TYPES } from './Editor.constants';
+import { TOOLS, TIMELINE_KEYS, EDITOR_KEYS, HISTORY_KEYS, FRAME_TYPES } from './Editor.constants';
+
+export const historyAtom = atom({
+    key: HISTORY_KEYS.HISTORY,
+    default: { past: [], future: [] },
+});
 
 export const isOnionSkinAtom = atom({
     key: EDITOR_KEYS.IS_ONION_SKIN,
@@ -157,6 +162,39 @@ export const addFrameSelector = selector({
 });
 
 
+export const duplicateFrameSelector = selector({
+    key: 'TIMELINE/DUPLICATE_FRAME',
+    get: () => {},
+    set: ({set, get}) => {
+        const maxLength = get(longestLayer);
+        const layerId = get(currentLayerAtom);
+        const currentFrameIndex = get(currentIndexAtom);
+        const currentFrameId = get(currentFrameAtom);
+        const frames = get(framesMap);
+        const layersObj = get(layersMap);
+        const layer = layersObj[layerId];
+        if (!layer) return;
+        const source = currentFrameId ? frames[currentFrameId] : null;
+        const newFrame = {
+            ...getEmptyFrame(),
+            dataUrl: source?.dataUrl || '',
+            json: source?.json || null,
+        };
+        const layerFrames = [...layer.frames];
+        layerFrames.splice(currentFrameIndex + 1, 0, newFrame.id);
+        if (maxLength < layerFrames.length) {
+            set(longestLayer, layerFrames.length);
+        }
+        set(framesMap, { ...frames, [newFrame.id]: newFrame });
+        set(layersMap, {
+            ...layersObj,
+            [layer.id]: { ...layer, frames: layerFrames },
+        });
+        set(currentFrameAtom, newFrame.id);
+        set(currentIndexAtom, currentFrameIndex + 1);
+    },
+});
+
 export const clearFrameSelector = selector({
     key: TIMELINE_KEYS.CLEAR_FRAME,
     get: () => {},
@@ -262,11 +300,20 @@ export const getSliceSelector = selector({
         const layers = get(layersAtom);
         const frames = get(framesMap);
         const layersObj = get(layersMap);
-        const slice = layers.map((key) => {
-            const dataUrl = frames[layersObj[key].frames[currentIndex]]?.dataUrl;
-            const json = frames[layersObj[key].frames[currentIndex]]?.json;
-            return { id: key, dataUrl, json, isVisible: layersObj[key].isVisible }
-        });
+        const slice = layers
+            .map((key) => {
+                const layer = layersObj[key];
+                if (!layer) return null;
+                const frameId = layer.frames?.[currentIndex];
+                const frame = frameId ? frames[frameId] : null;
+                return {
+                    id: key,
+                    dataUrl: frame?.dataUrl,
+                    json: frame?.json,
+                    isVisible: layer.isVisible,
+                };
+            })
+            .filter(Boolean);
         return slice.reverse();
     }
 });
@@ -332,13 +379,27 @@ export const nextFrameSelector = selector({
         const currentFrameIndex = get(currentIndexAtom);
         const currentLayer = get(currentLayerAtom);
         const allLayers = get(layersMap);
-        const allFrames = get(framesMap);
         let nextIndex =  currentFrameIndex + 1;
         if(nextIndex >= maxLength) {
             nextIndex = 0;
         }
         const newFrame = allLayers[currentLayer].frames[nextIndex];
         set(currentIndexAtom, nextIndex);
+        set(currentFrameAtom, newFrame);
+    },
+});
+
+export const prevFrameSelector = selector({
+    key: 'TIMELINE/PREV_FRAME',
+    get: () => {},
+    set: ({set, get}) => {
+        const maxLength = get(longestLayer);
+        const currentFrameIndex = get(currentIndexAtom);
+        const currentLayer = get(currentLayerAtom);
+        const allLayers = get(layersMap);
+        const prevIndex = currentFrameIndex <= 0 ? Math.max(0, maxLength - 1) : currentFrameIndex - 1;
+        const newFrame = allLayers[currentLayer]?.frames?.[prevIndex];
+        set(currentIndexAtom, prevIndex);
         set(currentFrameAtom, newFrame);
     },
 });
