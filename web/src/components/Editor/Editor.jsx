@@ -31,6 +31,7 @@ import { useCommit, useUndo, useRedo, useResetHistory, useHistoryState } from '.
 import Shortcuts from '../../modules/Shortcuts/Shortcuts';
 import { SHORTCUTS } from '../../configs/shortcuts';
 import { useTooltip } from '../../hooks/useShortcutTooltip';
+import { playTick, drawSceneMark, resetPlayMetrics } from '../../modules/metrics/playMetric';
 
 import Layers from './Layers/Layers';
 import Canvas from "./Canvas/Canvas";
@@ -142,20 +143,33 @@ const Editor = () => {
         }
       }
     }
+    const drawStart = isPlay ? performance.now() : 0;
     canvasRef.current.drawScene(slice, before, after);
     canvasRef.current.setCurrentLayer(currentLayer);
+    if (isPlay) drawSceneMark(performance.now() - drawStart);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentFrame, currentIndex, layers, layersM, framesM, isMultiple, multipleLeft, multipleRight, isPlay]);
 
   useEffect(() => {
-    if (isPlay) {
-      const timeout = setTimeout(() => {
-        nextFrame();
-        clearTimeout(timeout);
-      }, 100);
+    if (!isPlay) {
+      resetPlayMetrics();
+      return;
     }
+    const FRAME_MS = 100;
+    let rafId;
+    let lastTs = performance.now();
+    const tick = (now) => {
+      if (now - lastTs >= FRAME_MS) {
+        lastTs = now;
+        playTick();
+        nextFrame();
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlay, currentIndex]);
+  }, [isPlay]);
 
 
   useEffect(() => {
