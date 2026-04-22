@@ -5,6 +5,7 @@ import { fetchProject } from '../../modules/API/projects';
 import BaseButton from '../shared/BaseButton/BaseButton';
 import LikeButton from '../shared/LikeButton/LikeButton';
 import Avatar from '../shared/Avatar/Avatar';
+import Comments from '../Comments/Comments';
 import { flagEmoji, countryName } from '../../modules/countries';
 
 const Project = () => {
@@ -68,6 +69,7 @@ const Project = () => {
                     projectId={project.id}
                     likesCount={project.likesCount}
                     likedByMe={project.likedByMe}
+                    size="big"
                 />
                 <BaseButton size="small" onClick={() => history.push(`/editor/${project.id}`)}>
                     {project.isMine ? 'Edit' : 'Fork & edit'}
@@ -76,6 +78,8 @@ const Project = () => {
                     <div style={{ opacity: 0.6, fontSize: 14 }}>Forks: {project.forkCount}</div>
                 )}
             </div>
+
+            <Comments projectId={project.id} projectOwnerId={author?.id}/>
         </div>
     );
 };

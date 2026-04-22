@@ -1,6 +1,6 @@
 import { createUseStyles } from 'react-jss';
 import {LAYERS_HEIGHT} from '../Editor.styles';
-import {FRAME_HEIGHT, FRAME_MARGIN, FRAME_WIDTH, LAYERS_TOOLS_WIDTH} from "../Editor.styles";
+import {FRAME_MARGIN, FRAME_WIDTH, LAYERS_TOOLS_WIDTH} from "../Editor.styles";
 
 const TIMELINE_HEIGHT = 15;
 

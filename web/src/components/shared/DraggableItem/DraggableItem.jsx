@@ -1,13 +1,14 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef} from 'react';
 import useStateRef from 'react-usestateref';
 //import { useStyles } from './DragIcon.styles';
 
 const DraggableItem = ({children, isFloat, itemWidth, itemHeight}) => {
     //const classes = useStyles();
-    const [mousePosition, setMousePosition, mousePosRef] = useStateRef([0,0]);
+    const [mousePosition, setMousePosition] = useStateRef([0,0]);
     const [startPosition, setStartPosition, startPosRef] = useStateRef([0,0]);
     const itemRef = useRef();
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         setStartPosition(null)
     }, [isFloat]);
@@ -28,6 +29,7 @@ const DraggableItem = ({children, isFloat, itemWidth, itemHeight}) => {
             //setSpeed(mousePosition[1] - e.touches[0].clientY)
             setMousePosition([e.touches[0].clientX, e.touches[0].clientY]);
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     return <>
         <div

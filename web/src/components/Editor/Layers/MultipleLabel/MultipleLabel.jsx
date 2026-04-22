@@ -1,7 +1,7 @@
-import React, {memo, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useStyles, borderSize} from './MultipleLabel.styles';
 import clsx from 'clsx';
-import {FRAME_HEIGHT, FRAME_WIDTH, FRAME_MARGIN, LAYERS_TOOLS_WIDTH} from "../../Editor.styles";
+import {FRAME_WIDTH, FRAME_MARGIN, LAYERS_TOOLS_WIDTH} from "../../Editor.styles";
 
 const SLICK_AREA = 10;
 
@@ -20,6 +20,7 @@ const MultipleLabel = (props) => {
     const [slickStep, setSlickStep] = useState(count);
     const [marginValue, setMarginValue] = useState(0);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         setPositionByStep(count);
     }, [count, item.index]);

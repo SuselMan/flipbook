@@ -13,7 +13,7 @@
 2. Поле `Display name` (обязательное, 2-32 символа) — как он подпишется под работой. Дефолт — «Anonymous».
 3. Поле `Project name` + `Description` — как и сейчас.
 4. Под кнопкой Publish — блок «💡 Create an account so you don't lose this cartoon and can edit it later» с кнопкой **«Sign up & keep this draft»**.
-5. Две кнопки: `Publish anonymously` (серая), `Sign up first` (primary).
+5. Две кнопки: `Publish anonymously` (серая), `Sign up first` (primary).nfr
 
 **Если юзер залогинен:** всё как сейчас, без поля Display name и без CTA.
 

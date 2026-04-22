@@ -35,6 +35,7 @@ const Activation = () => {
                 setIsFailed(true);
                 setError(error.message);
             })
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return <div className={classes.activationContainer}>

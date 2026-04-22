@@ -22,7 +22,12 @@
       "Bash(tasklist //fi \"PID eq 19504\")",
       "Bash(PORT=3001 BROWSER=none yarn start)",
       "Bash(mongosh --quiet --eval 'use\\(\"test_b\"\\); db.dropDatabase\\(\\);')",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(ps -W)",
+      "Bash(tasklist //FI \"PID eq 10920\")",
+      "Bash(powershell.exe *)",
+      "Bash(BROWSER=none CI=true yarn start)",
+      "Bash(grep -Ev \"node_modules|build|public|src|.yarn$\")"
     ]
   }
 }

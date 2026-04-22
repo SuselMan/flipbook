@@ -1,7 +1,7 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStyles } from './Color.styles';
 import RoundButton from '../../../shared/RoundButton/RoundButton';
-import {getString, stringNames} from '../../../../configs/strings';
 import {ReactComponent as ColorIcon} from '../../../../shared/icons/color.svg';
 import Tooltip from '@mui/material/Tooltip';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
@@ -9,6 +9,7 @@ import { BlockPicker } from 'react-color';
 
 const Color = ({ currentColor, pickColor, isTooltipOpen, setIsTooltipOpen }) => {
     const classes = useStyles();
+    const { t } = useTranslation();
     return <Tooltip
         title={
             <div className={classes.colorPicker}>
@@ -52,7 +53,7 @@ const Color = ({ currentColor, pickColor, isTooltipOpen, setIsTooltipOpen }) => 
             <ClickAwayListener onClickAway={() => setIsTooltipOpen(false)}>
                 <div>
                     <RoundButton
-                        title={getString(stringNames.paletteToolTitle)}
+                        title={t('editor.tools.palette')}
                         onClick={() => setIsTooltipOpen(!isTooltipOpen)}
                         isPressed={isTooltipOpen}
                         borderColor={currentColor}

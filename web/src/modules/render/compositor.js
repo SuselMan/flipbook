@@ -5,13 +5,6 @@ const loadImage = (src) => new Promise((resolve, reject) => {
     img.src = src;
 });
 
-const canvasToBlob = (canvas, type = 'image/png') =>
-    new Promise((resolve, reject) => {
-        canvas.toBlob((blob) => {
-            if (blob) resolve(blob);
-            else reject(new Error('canvas.toBlob returned null'));
-        }, type);
-    });
 
 const blobToUint8 = async (blob) => new Uint8Array(await blob.arrayBuffer());
 

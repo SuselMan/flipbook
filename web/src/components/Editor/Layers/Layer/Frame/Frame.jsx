@@ -3,21 +3,16 @@ import { useStyles } from './Frame.styles';
 import clsx from 'clsx';
 import { frameSelector } from '../../../Editor.state';
 import {
-    RecoilRoot,
-    atom,
-    selector,
     useRecoilState,
     useSetRecoilState,
-    useRecoilValue,
 } from 'recoil';
 import { currentFrameAtom, currentLayerAtom, currentIndexAtom, createFrameRangeSelector, framesRangeAtom } from '../../../Editor.state';
-import { FRAME_TYPES } from '../../../Editor.constants';
 
 const Frame = (props) => {
     const classes = useStyles();
     const { id, layerId, frameIndex, layerIndex } = props;
     const [frame] = useRecoilState(frameSelector(id))
-    const [ currentFrame, setCurrentFrame ] = useRecoilState(currentFrameAtom);
+    const [ , setCurrentFrame ] = useRecoilState(currentFrameAtom);
     const [ currentLayer, setCurrentLayer ] = useRecoilState(currentLayerAtom);
     const [ currentIndex, setCurrentIndex ] = useRecoilState(currentIndexAtom);
     const [range, setRange] = useRecoilState(framesRangeAtom);

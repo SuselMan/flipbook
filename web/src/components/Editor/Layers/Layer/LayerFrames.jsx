@@ -1,4 +1,4 @@
-import React, {memo, useState, forwardRef, useImperativeHandle, useEffect} from 'react';
+import React, {forwardRef} from 'react';
 import clsx from 'clsx';
 import Frame from './Frame/Frame';
 import AddFrame from './Frame/AddFrame';

@@ -20,7 +20,9 @@ export const useStyles = createUseStyles(theme => {
     container: {
       display: 'flex',
       flexDirection: 'column',
-      height: `calc(100% - ${HEADER_HEIGHT}px)`,
+      position: 'relative',
+      height: `calc(100vh - ${HEADER_HEIGHT}px)`,
+      overflow: 'hidden',
       userSelect: 'none',
     },
     paper: {

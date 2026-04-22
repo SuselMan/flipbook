@@ -1,16 +1,8 @@
 import React from 'react';
 import { useStyles } from './Frame.styles';
 import clsx from 'clsx';
-import {addFrameByPositionSelector, frameSelector} from '../../../Editor.state';
-import {
-    RecoilRoot,
-    atom,
-    selector,
-    useRecoilState,
-    useSetRecoilState,
-    useRecoilValue,
-} from 'recoil';
-import { currentFrameAtom, currentLayerAtom, currentIndexAtom } from '../../../Editor.state';
+import { addFrameByPositionSelector } from '../../../Editor.state';
+import { useSetRecoilState } from 'recoil';
 
 const AddFrame = ({ layerId, position }) => {
     const classes = useStyles();

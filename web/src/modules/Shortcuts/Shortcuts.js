@@ -31,8 +31,10 @@ class ShortcutsManager {
         this.captureCallback = null;
         this.subscribers = new Set();
         this._onKeyDown = this._onKeyDown.bind(this);
-        if (typeof document !== 'undefined') {
-            document.addEventListener('keydown', this._onKeyDown);
+        if (typeof window !== 'undefined') {
+            // capture phase so we beat any component-level listeners and
+            // preventDefault can cancel browser shortcuts reliably
+            window.addEventListener('keydown', this._onKeyDown, { capture: true });
         }
     }
 

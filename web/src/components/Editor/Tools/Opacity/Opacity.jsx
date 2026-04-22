@@ -1,15 +1,15 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStyles } from './Opacity.styles';
 import Tooltip from '@mui/material/Tooltip';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
-import clsx from 'clsx';
 import RoundButton from "../../../shared/RoundButton/RoundButton";
-import {getString, stringNames} from "../../../../configs/strings";
 import {ReactComponent as OpacityIcon} from "../../../../shared/icons/opacity.svg";
 import Slider from '@mui/material/Slider';
 
 const Opacity = ({ opacity, setOpacityValue, isOpacityTooltipOpen, setIsOpacityTooltipOpen, currentColor }) => {
     const classes = useStyles();
+    const { t } = useTranslation();
     return <Tooltip
         title={
             <div className={classes.container}>
@@ -59,7 +59,7 @@ const Opacity = ({ opacity, setOpacityValue, isOpacityTooltipOpen, setIsOpacityT
             <ClickAwayListener onClickAway={() => setIsOpacityTooltipOpen(false)}>
                 <div>
                     <RoundButton
-                        title={getString(stringNames.opacityToolTitle)}
+                        title={t('editor.tools.opacity')}
                         onClick={() => {
                             setIsOpacityTooltipOpen(!isOpacityTooltipOpen);
                         }}

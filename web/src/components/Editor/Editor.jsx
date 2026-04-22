@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStyles } from './Editor.styles';
 import clsx from 'clsx';
 import RoundButton from '../shared/RoundButton/RoundButton';
@@ -6,6 +7,7 @@ import { ReactComponent as TrashIcon } from '../../shared/icons/trash.svg';
 import { ReactComponent as SaveIcon } from '../../shared/icons/save.svg';
 import { ReactComponent as PenIcon } from '../../shared/icons/pen.svg';
 import { ReactComponent as EraserIcon } from '../../shared/icons/eraser.svg';
+import { ReactComponent as FillIcon } from '../../shared/icons/fill.svg';
 import { ReactComponent as PlayIcon } from '../../shared/icons/play.svg';
 import { ReactComponent as PauseIcon } from '../../shared/icons/pause.svg';
 import { ReactComponent as DuplicateIcon } from '../../shared/icons/duplicate.svg';
@@ -28,15 +30,14 @@ import { useHydrateEditor } from '../../hooks/useHydrateEditor';
 import { useCommit, useUndo, useRedo, useResetHistory, useHistoryState } from '../../hooks/useHistory';
 import Shortcuts from '../../modules/Shortcuts/Shortcuts';
 import { SHORTCUTS } from '../../configs/shortcuts';
+import { useTooltip } from '../../hooks/useShortcutTooltip';
 
-import { stringNames, getString } from '../../configs/strings';
 import Layers from './Layers/Layers';
 import Canvas from "./Canvas/Canvas";
 import Color from './Tools/Color/Color';
 import BrushSize from './Tools/BrushSize/BrushSize';
 import Opacity from './Tools/Opacity/Opacity';
-import useStateRef from 'react-usestateref';
-import { useRecoilState, useSetRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { TOOLS, FINGER_OFFSET_Y, FINGER_OFFSET_X } from './Editor.constants';
 import { renderPreview, packSource, STAGES } from '../../modules/render/render';
 import { publishProject } from '../../modules/API/API';
@@ -44,6 +45,8 @@ import {
   currentLayerAtom,
   isPlayAtom,
   isOnionSkinAtom,
+  onionSkinLeftAtom,
+  onionSkinRightAtom,
   selectedToolAtom,
   selectedColorAtom,
   brushSizeAtom,
@@ -57,7 +60,6 @@ import {
   getSliceSelector,
   nextFrameSelector,
   currentIndexAtom,
-  clearFrameSelector,
   deleteFrameSelector,
   addFrameSelector,
   layersAtom,
@@ -70,13 +72,16 @@ import { useParams } from "react-router-dom";
 
 const Editor = () => {
   const classes = useStyles();
+  const { t } = useTranslation();
   const canvasRef = useRef();
   const [isPlay, setIsPlay] = useRecoilState(isPlayAtom);
-  const [currentFrame, setCurrentFrame] = useRecoilState(currentFrameAtom);
+  const [currentFrame] = useRecoilState(currentFrameAtom);
   const [currentIndex] = useRecoilState(currentIndexAtom);
   const [slice] = useRecoilState(getSliceSelector);
-  const [currentLayer, setCurrentLayer] = useRecoilState(currentLayerAtom);
+  const [currentLayer] = useRecoilState(currentLayerAtom);
   const [isMultiple, setIsMultiple] = useRecoilState(isOnionSkinAtom);
+  const multipleLeft = useRecoilValue(onionSkinLeftAtom);
+  const multipleRight = useRecoilValue(onionSkinRightAtom);
   const [tool, setTool] = useRecoilState(selectedToolAtom);
   const [currentColor, setCurrentColor] = useRecoilState(selectedColorAtom);
   const [isTooltipOpen, setIsTooltipOpen] = useRecoilState(isColorPickingAtom);
@@ -87,7 +92,6 @@ const Editor = () => {
   const [isOpacityTooltipOpen, setIsOpacityTooltipOpen] = useRecoilState(isOpacityPickingAtom);
   const [brushSize, setBrushSize] = useRecoilState(brushSizeAtom);
   const [opacity, setOpacity] = useRecoilState(opacityAtom);
-  const clearFrame = useSetRecoilState(clearFrameSelector);
   const deleteFrame = useSetRecoilState(deleteFrameSelector);
   const addFrame = useSetRecoilState(addFrameSelector)
   const prevFrame = useSetRecoilState(prevFrameSelector);
@@ -117,6 +121,7 @@ const Editor = () => {
   const redo = useRedo();
   const resetHistory = useResetHistory();
   const { canUndo, canRedo } = useHistoryState();
+  const tooltip = useTooltip();
 
 
   useEffect(() => {
@@ -126,13 +131,39 @@ const Editor = () => {
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    if (currentFrame) {
-      canvasRef.current.drawScene(slice);
-      canvasRef.current.setCurrentLayer(currentLayer);
-    } else {
+    if (!currentFrame) {
       canvasRef.current.clearScene(true);
+      return;
     }
-  }, [currentFrame, currentIndex, layers, layersM, framesM]);
+    // Collect onion skin neighbours: previous N frames (before) and next M frames (after)
+    // for the CURRENT layer. `before[0]` is the immediately previous frame etc.
+    let before = [];
+    let after = [];
+    if (isMultiple && !isPlay) {
+      const layer = layersM[currentLayer];
+      if (layer?.frames) {
+        // multipleLeft is stored as a negative offset (e.g. -2 = two frames back)
+        const leftCount = Math.max(0, -multipleLeft);
+        const rightCount = Math.max(0, multipleRight);
+        for (let k = 1; k <= leftCount; k++) {
+          const idx = currentIndex - k;
+          if (idx < 0) break;
+          const fid = layer.frames[idx];
+          const f = fid ? framesM[fid] : null;
+          if (f?.dataUrl) before.push(f.dataUrl);
+        }
+        for (let k = 1; k <= rightCount; k++) {
+          const idx = currentIndex + k;
+          const fid = layer.frames[idx];
+          const f = fid ? framesM[fid] : null;
+          if (f?.dataUrl) after.push(f.dataUrl);
+        }
+      }
+    }
+    canvasRef.current.drawScene(slice, before, after);
+    canvasRef.current.setCurrentLayer(currentLayer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentFrame, currentIndex, layers, layersM, framesM, isMultiple, multipleLeft, multipleRight, isPlay]);
 
   useEffect(() => {
     if (isPlay) {
@@ -141,6 +172,7 @@ const Editor = () => {
         clearTimeout(timeout);
       }, 100);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlay, currentIndex]);
 
 
@@ -179,6 +211,7 @@ const Editor = () => {
       setIsLoading(false);
     })();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onCanvasUpdated = async (json, dataUrl) => {
@@ -209,7 +242,7 @@ const Editor = () => {
     setIsProjectSaving(true);
     try {
       const state = { layers, layersMap: layersM, framesMap: framesM };
-      const projectName = name || 'Untitled project';
+      const projectName = name || t('feed.untitled');
 
       setPublishStage(STAGES.COMPOSITING);
       setPublishProgress(0);
@@ -324,6 +357,7 @@ const Editor = () => {
       [SHORTCUTS.ONION_SKIN_TOOL]: () => setIsMultiple((m) => !m),
       [SHORTCUTS.BRUSH_TOOL]: () => setTool(TOOLS.BRUSH),
       [SHORTCUTS.ERASER_TOOL]: () => setTool(TOOLS.ERASER),
+      [SHORTCUTS.FILL_TOOL]: () => setTool(TOOLS.FILL),
       [SHORTCUTS.NEXT_FRAME]: () => nextFrame(),
       [SHORTCUTS.PREVIOUS_FRAME]: () => prevFrame(),
       [SHORTCUTS.REDUCE_BRUSH]: () => setBrush(Math.max(1, brushSize - 1)),
@@ -338,25 +372,26 @@ const Editor = () => {
     return () => {
       for (const action of Object.keys(bindings)) Shortcuts.off(action);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [undo, redo, brushSize]);
 
   return <div className={classes.container}>
     <Modal isOpen={isModalOpen} close={() => {
       if (!isProjectSaving) setIsModalOpen(false);
-    }} title="Publish Project">
+    }} title={t('editor.publishTitle')}>
       {!isProjectSaving && <div className={classes.saveContainer}>
         <img src={preview} alt="preview" className={classes.preview}/>
         <div className={classes.saveForm}>
           <TextField
             id="Name"
-            label="Project Name*"
+            label={t('editor.projectName')}
             variant="standard"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
           <TextField
             id="Description"
-            label="Description"
+            label={t('editor.description')}
             variant="standard"
             multiline
             value={description}
@@ -364,7 +399,7 @@ const Editor = () => {
           />
           {publishError && <div style={{ color: '#ff5656' }}>{publishError}</div>}
           <BaseButton size="small" onClick={() => saveProject()}>
-            Publish
+            {t('editor.publish')}
           </BaseButton>
         </div>
       </div>}
@@ -373,11 +408,11 @@ const Editor = () => {
           <PreloaderIcon className={classes.preloader}/>
           <div style={{ textAlign: 'center', marginTop: 12 }}>
             <div>{
-              publishStage === STAGES.COMPOSITING ? 'Compositing frames' :
-              publishStage === STAGES.ENCODING ? 'Encoding WebP' :
-              publishStage === STAGES.PACKING ? 'Packing source' :
-              publishStage === 'uploading' ? 'Uploading' :
-              'Working'
+              publishStage === STAGES.COMPOSITING ? t('editor.stages.compositing') :
+              publishStage === STAGES.ENCODING ? t('editor.stages.encoding') :
+              publishStage === STAGES.PACKING ? t('editor.stages.packing') :
+              publishStage === 'uploading' ? t('editor.stages.uploading') :
+              t('editor.stages.working')
             }…</div>
             <div style={{ opacity: 0.7, fontSize: 12, marginTop: 4 }}>
               {Math.round((publishProgress || 0) * 100)}%
@@ -391,17 +426,17 @@ const Editor = () => {
       <div className={classes.workArea}>
         <div className={clsx(classes.tools, classes.leftTools)}>
           <RoundButton onClick={() => showSaveModal()}
-                       title={getString(stringNames.saveToolTitle)}><SaveIcon/></RoundButton>
+                       title={tooltip(t('editor.tools.publish'), SHORTCUTS.SAVE)}><SaveIcon/></RoundButton>
           <RoundButton onClick={() => undo()} disabled={!canUndo}
-                       title={getString(stringNames.undoToolTitle)}><UndoIcon/></RoundButton>
+                       title={tooltip(t('editor.tools.undo'), SHORTCUTS.UNDO)}><UndoIcon/></RoundButton>
           <RoundButton onClick={() => redo()} disabled={!canRedo}
-                       title={getString(stringNames.redoToolTitle)}><RedoIcon/></RoundButton>
+                       title={tooltip(t('editor.tools.redo'), SHORTCUTS.REDO)}><RedoIcon/></RoundButton>
           <RoundButton onClick={() => setTool(TOOLS.MOVE_SCREEN)} isPressed={tool === TOOLS.MOVE_SCREEN}
-                       title={getString(stringNames.redoToolTitle)}><MoveIcon/></RoundButton>
+                       title={t('editor.tools.moveCanvas')}><MoveIcon/></RoundButton>
           <RoundButton onClick={zoomIn}
-                       title={getString(stringNames.redoToolTitle)}><ZoomInIcon/></RoundButton>
+                       title={tooltip(t('editor.tools.zoomIn'), SHORTCUTS.ZOOM_IN)}><ZoomInIcon/></RoundButton>
           <RoundButton onClick={zoomOut}
-                       title={getString(stringNames.redoToolTitle)}><ZoomOutIcon/></RoundButton>
+                       title={tooltip(t('editor.tools.zoomOut'), SHORTCUTS.ZOOM_OUT)}><ZoomOutIcon/></RoundButton>
         </div>
         <BrushCursor x={cursorPosition.x} y={cursorPosition.y} size={brushSize} isVisible={isBrushVisible}/>
         <Canvas
@@ -411,18 +446,25 @@ const Editor = () => {
         />
         <div className={clsx(classes.tools, classes.rightTools)}>
           <RoundButton
-            title={getString(stringNames.brushToolTitle)}
+            title={tooltip(t('editor.tools.brush'), SHORTCUTS.BRUSH_TOOL)}
             onClick={() => setTool(TOOLS.BRUSH)}
             isPressed={tool === TOOLS.BRUSH}
           >
             <PenIcon/>
           </RoundButton>
           <RoundButton
-            title={getString(stringNames.eraserToolTitle)}
+            title={tooltip(t('editor.tools.eraser'), SHORTCUTS.ERASER_TOOL)}
             onClick={() => setTool(TOOLS.ERASER)}
             isPressed={tool === TOOLS.ERASER}
           >
             <EraserIcon/>
+          </RoundButton>
+          <RoundButton
+            title={tooltip(t('editor.tools.fill'), SHORTCUTS.FILL_TOOL)}
+            onClick={() => setTool(TOOLS.FILL)}
+            isPressed={tool === TOOLS.FILL}
+          >
+            <FillIcon/>
           </RoundButton>
           <Color
             isTooltipOpen={isTooltipOpen}
@@ -447,19 +489,19 @@ const Editor = () => {
         </div>
       </div>
       <div className={classes.bottomTools}>
-        <RoundButton title={getString(stringNames.addFrameToolTitle)} onClick={handleAddFrame}>+</RoundButton>
-        <RoundButton title={getString(stringNames.addFrameToolTitle)} onClick={handleAddLayer}><AddLayerIcon/></RoundButton>
-        <RoundButton title={getString(stringNames.duplicateFrameToolTitle)} onClick={handleDuplicateFrame}>
+        <RoundButton title={tooltip(t('editor.tools.addFrame'), SHORTCUTS.ADD_FRAME)} onClick={handleAddFrame}>+</RoundButton>
+        <RoundButton title={tooltip(t('editor.tools.addLayer'), SHORTCUTS.ADD_LAYER)} onClick={handleAddLayer}><AddLayerIcon/></RoundButton>
+        <RoundButton title={tooltip(t('editor.tools.duplicateFrame'), SHORTCUTS.DUPLICATE_FRAME)} onClick={handleDuplicateFrame}>
           <DuplicateIcon/>
         </RoundButton>
-        <RoundButton title={getString(stringNames.playPauseToolTitle)} onClick={togglePlay}>
+        <RoundButton title={tooltip(t('editor.tools.playPause'), SHORTCUTS.PLAY_PAUSE)} onClick={togglePlay}>
           {isPlay ? <PauseIcon/> : <PlayIcon/>}
         </RoundButton>
-        <RoundButton title={getString(stringNames.deleteFrameToolTitle)} onClick={handleDeleteFrame}><TrashIcon/></RoundButton>
-        <RoundButton title={getString(stringNames.onionSkinToolTitle)} isPressed={isMultiple} onClick={() => setIsMultiple(!isMultiple)}>
+        <RoundButton title={tooltip(t('editor.tools.deleteFrame'), SHORTCUTS.DELETE_FRAME)} onClick={handleDeleteFrame}><TrashIcon/></RoundButton>
+        <RoundButton title={tooltip(t('editor.tools.onionSkin'), SHORTCUTS.ONION_SKIN_TOOL)} isPressed={isMultiple} onClick={() => setIsMultiple(!isMultiple)}>
           <MultipleIcon/>
         </RoundButton>
-        <RoundButton title={getString(stringNames.clearToolTitle)} onClick={onClearFrame}><ClearIcon/></RoundButton>
+        <RoundButton title={tooltip(t('editor.tools.clear'), SHORTCUTS.CLEAR_FRAME)} onClick={onClearFrame}><ClearIcon/></RoundButton>
       </div>
       <Layers/>
     </>}

@@ -11,7 +11,7 @@ import MyProjects from './components/MyProjects/MyProjects';
 import Settings from './components/Settings/Settings';
 import Hotkeys from './components/Settings/Hotkeys';
 import UserProfile from './components/UserProfile/UserProfile';
-import { BrowserRouter as Router, Switch, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { useStyles } from './App.styles';
 
 const App = (props) => {

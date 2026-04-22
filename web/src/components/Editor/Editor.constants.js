@@ -1,6 +1,7 @@
 export const TOOLS = {
     BRUSH: 'brush',
     ERASER: 'eraser',
+    FILL: 'fill',
     MOVE_SCREEN: 'move_screen',
 }
 

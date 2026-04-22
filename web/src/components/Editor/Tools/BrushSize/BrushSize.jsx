@@ -1,8 +1,7 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStyles } from './BrushSize.styles';
-import clsx from 'clsx';
 import RoundButton from "../../../shared/RoundButton/RoundButton";
-import {getString, stringNames} from "../../../../configs/strings";
 import {ReactComponent as BrushSizeIcon} from "../../../../shared/icons/brush-size.svg";
 import Tooltip from '@mui/material/Tooltip';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
@@ -10,6 +9,7 @@ import Slider from '@mui/material/Slider';
 
 const BrushSize = ({ brushSize, setIsBrushTooltipOpen, currentColor, isBrushTooltipOpen, setBrush }) => {
     const classes = useStyles();
+    const { t } = useTranslation();
     return <Tooltip
         title={
             <div className={classes.container}>
@@ -59,7 +59,7 @@ const BrushSize = ({ brushSize, setIsBrushTooltipOpen, currentColor, isBrushTool
             <ClickAwayListener onClickAway={() => setIsBrushTooltipOpen(false)}>
                 <div>
                     <RoundButton
-                        title={getString(stringNames.brushSizeToolTitle)}
+                        title={t('editor.tools.brushSize')}
                         iconColor={currentColor}
                         onClick={() => {
                             setIsBrushTooltipOpen(!isBrushTooltipOpen);

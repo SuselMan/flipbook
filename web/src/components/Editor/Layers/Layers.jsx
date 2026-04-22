@@ -1,18 +1,13 @@
-import React, {memo, useState, forwardRef, useImperativeHandle, useEffect, useRef} from 'react';
+import React, {useState, forwardRef, useRef} from 'react';
 import LayerFrames from './Layer/LayerFrames';
-import LayerTools from './Layer/LayerTools';
 import { useStyles } from './Layers.styles';
 import {
-    RecoilRoot,
-    atom,
-    selector,
     useRecoilState,
     useRecoilValue,
 } from 'recoil';
 import {currentIndexAtom, layersAtom, isOnionSkinAtom, onionSkinLeftAtom, onionSkinRightAtom, longestLayer, isPlayAtom} from '../Editor.state';
 import { FRAME_MARGIN, FRAME_WIDTH, LAYERS_TOOLS_WIDTH } from "../Editor.styles";
 import MultipleLabel from './MultipleLabel/MultipleLabel';
-import DraggableItem from '../../shared/DraggableItem/DraggableItem';
 import {
     DndContext,
     closestCenter,
@@ -41,9 +36,7 @@ const Layers = forwardRef((props, ref) => {
     const isOnionSkin = useRecoilValue(isOnionSkinAtom);
     const isPlay = useRecoilValue(isPlayAtom);
     const [scrollPosition, setScrollPosition] = useState(0);
-    const [scrollPositionTop, setScrollPositionTop] = useState(0);
     const scrollRef = useRef();
-    const [currentSortable, setCurrentSortable] = useState(null);
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(TouchSensor),
@@ -54,7 +47,6 @@ const Layers = forwardRef((props, ref) => {
 
     const setScroll = (e) => {
         setScrollPosition(scrollRef.current.scrollLeft);
-        setScrollPositionTop(scrollRef.current.scrollTop);
     }
     const handleDragEnd = (event) => {
         const {active, over} = event;

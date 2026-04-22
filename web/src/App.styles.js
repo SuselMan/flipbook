@@ -5,8 +5,7 @@ export const useStyles = createUseStyles(theme => {
     '@global': {
       'body, html, #root': {
         width: '100%',
-        height: '100%',
-        overflow: 'hidden',
+        minHeight: '100%',
       },
       body: {
         background: theme.colors.mainBackground,
@@ -19,10 +18,8 @@ export const useStyles = createUseStyles(theme => {
         '-moz-osx-font-smoothing': 'grayscale'
       },
       main: {
-        left: '0',
-        position: 'absolute',
         width: '100%',
-        height: '100%',
+        minHeight: '100vh',
       },
       a: {
         textDecoration: 'none'

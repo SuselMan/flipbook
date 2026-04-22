@@ -1,5 +1,5 @@
 import { createUseStyles } from 'react-jss';
-import {LAYERS_HEIGHT, FRAME_WIDTH, FRAME_HEIGHT, FRAME_MARGIN } from '../../Editor.styles';
+import { FRAME_MARGIN } from '../../Editor.styles';
 
 export const useStyles = createUseStyles(theme => {
     return {

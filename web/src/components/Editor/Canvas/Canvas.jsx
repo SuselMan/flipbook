@@ -1,9 +1,10 @@
-import React, {memo, useState, useImperativeHandle, useEffect, forwardRef, useRef} from 'react';
+import React, {memo, useImperativeHandle, useEffect, forwardRef, useRef} from 'react';
 import { useStyles } from './Canvas.styles';
 import clsx from 'clsx';
 import Konva from 'konva';
 import { initialLayer } from "../Editor.state";
 import {TOOLS, FINGER_OFFSET_Y, FINGER_OFFSET_X} from "../Editor.constants";
+import { floodFill } from '../../../modules/render/floodFill';
 
 let isPaint = false;
 let mode = 'brush';
@@ -23,6 +24,12 @@ const DRAW_CONTAINER_ID = 'drawContainer';
 let moveOffset = {x: 0, y: 0};
 let startMovePosition = {x: 0, y: 0};
 let currentZoom = 1;
+
+const PAPER_WIDTH = 1024;
+const PAPER_HEIGHT = 600;
+const PAPER_Y = 120;
+// Paper (canvas/holst) lives in fixed world coords. Stage viewport grows with window.
+let paperX = 0;
 
 const updateCurrentLayerIndex = () => {
     currentLayerIndex = layers.findIndex(({id}) => id === currentLayerId);
@@ -46,10 +53,10 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
             zoomReset: () => setZoom(1),
             elementRef: () => elementRef?.current,
             getPreview: () => stage.toDataURL({
-                x: window.innerWidth/2 - 1024/2,
-                y: 120,
-                width: 1024,
-                height: 600,
+                x: paperX,
+                y: PAPER_Y,
+                width: PAPER_WIDTH,
+                height: PAPER_HEIGHT,
                 pixelRatio: 0.5,
             }),
         };
@@ -93,6 +100,37 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
         imageObj.src = dataUrl;
     }
 
+    // Onion skin: draw an image tinted to a solid colour (keeping the original
+    // silhouette/alpha) with fading opacity. Uses `source-atop` on an offscreen
+    // canvas — faster and works with black strokes where channel-multiply tints
+    // would produce 0.
+    const drawTintedImage = (dataUrl, layer, tint, opacity) => {
+        const imageObj = new Image();
+        imageObj.onload = () => {
+            const off = document.createElement('canvas');
+            off.width = PAPER_WIDTH;
+            off.height = PAPER_HEIGHT;
+            const ctx = off.getContext('2d');
+            ctx.drawImage(imageObj, 0, 0, PAPER_WIDTH, PAPER_HEIGHT);
+            ctx.globalCompositeOperation = 'source-atop';
+            ctx.fillStyle = tint;
+            ctx.fillRect(0, 0, PAPER_WIDTH, PAPER_HEIGHT);
+
+            const node = new Konva.Image({
+                x: paperX,
+                y: PAPER_Y,
+                image: off,
+                width: PAPER_WIDTH,
+                height: PAPER_HEIGHT,
+                opacity,
+                listening: false,
+            });
+            layer.add(node);
+            layer.batchDraw();
+        };
+        imageObj.src = dataUrl;
+    };
+
     const drawJSON = async (dataUrl, layer, data = {}) => {
         layer.destroyChildren();
         const d =  JSON.parse(dataUrl);
@@ -104,27 +142,44 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
     }
 
     const drawScene = async (layersArr, before = [], after = []) => {
-        //console.log('drawScene');
         layers = []
         stage.destroyChildren();
         addPaper();
         addSupportLayers();
 
-        layersArr.forEach(({id, dataUrl, json,  isVisible}) => {
-            console.log('json', json);
+        layersArr.forEach(({id, dataUrl, json, isVisible}) => {
             const konvaLayer = new Konva.Layer();
             konvaLayer.listening(false);
             stage.add(konvaLayer);
             layers.push({id, data: konvaLayer, isVisible });
-            if(json && isVisible) {
+            if (!isVisible) return;
+            if (json) {
                 drawJSON(json, konvaLayer);
+            } else if (dataUrl) {
+                // Fallback for layers that can't round-trip through Konva JSON
+                // (e.g. after flood fill — Konva.Image doesn't persist its bitmap in toJSON)
+                drawImage(dataUrl, konvaLayer, {
+                    x: paperX,
+                    y: PAPER_Y,
+                    width: PAPER_WIDTH,
+                    height: PAPER_HEIGHT,
+                });
             }
         });
+        // Onion skin. Farther neighbours fade out. Past frames get a green
+        // tint, future frames blue — matches the TVPaint/Procreate convention.
+        const onionOpacity = (index, total) => {
+            const baseline = 0.45;
+            const step = total > 1 ? 0.3 / (total - 1) : 0;
+            return Math.max(0.08, baseline - step * index);
+        };
+        const PAST_TINT = '#00b34a';
+        const FUTURE_TINT = '#2b7dff';
         before.forEach((dataUrl, index) => {
-            drawImage(dataUrl, supportLayerBefore, { opacity: 0.1 });
+            drawTintedImage(dataUrl, supportLayerBefore, PAST_TINT, onionOpacity(index, before.length));
         });
         after.forEach((dataUrl, index) => {
-            drawImage(dataUrl, supportLayerAfter, { opacity: 0.1 })
+            drawTintedImage(dataUrl, supportLayerAfter, FUTURE_TINT, onionOpacity(index, after.length));
         });
     }
 
@@ -141,10 +196,10 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
         const layer = new Konva.Layer();
         layer.listening(false)
         const rect = new Konva.Rect({
-            x: window.innerWidth/2 - 1024/2,
-            y: 120,
-            width: 1024,
-            height: 600,
+            x: paperX,
+            y: PAPER_Y,
+            width: PAPER_WIDTH,
+            height: PAPER_HEIGHT,
             fill: 'white',
             shadowColor: 'black',
             shadowBlur: 0,
@@ -156,6 +211,7 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
     }
 
     const initCanvas = () => {
+        paperX = Math.round(window.innerWidth / 2 - PAPER_WIDTH / 2);
         stage = new Konva.Stage({
             container: DRAW_CONTAINER_ID,
             width: window.innerWidth,
@@ -167,6 +223,13 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
         stage.add(currentLayer);
         addPaper()
         addSupportLayers();
+    }
+
+    const handleResize = () => {
+        if (!stage) return;
+        stage.width(window.innerWidth);
+        stage.height(window.innerHeight);
+        stage.batchDraw();
     }
 
 
@@ -199,6 +262,41 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
         }
     }
 
+    const fillAt = (pointerPos) => {
+        if (!currentLayer) return;
+        const fillX = Math.round(pointerPos.x - paperX);
+        const fillY = Math.round(pointerPos.y - PAPER_Y);
+        if (fillX < 0 || fillY < 0 || fillX >= PAPER_WIDTH || fillY >= PAPER_HEIGHT) return;
+
+        const offscreen = currentLayer.toCanvas({
+            x: paperX,
+            y: PAPER_Y,
+            width: PAPER_WIDTH,
+            height: PAPER_HEIGHT,
+            pixelRatio: 1,
+        });
+        const ctx = offscreen.getContext('2d');
+        const changed = floodFill(ctx, fillX, fillY, color, opacity);
+        if (!changed) return;
+
+        // Feed the canvas directly to Konva.Image — no PNG intermediate,
+        // no Image decode roundtrip. Then one WebP encode for Recoil state.
+        currentLayer.destroyChildren();
+        currentLayer.add(new Konva.Image({
+            x: paperX,
+            y: PAPER_Y,
+            image: offscreen,
+            width: PAPER_WIDTH,
+            height: PAPER_HEIGHT,
+        }));
+        currentLayer.batchDraw();
+
+        const data = offscreen.toDataURL('image/webp', 0.9);
+        // json=null → drawScene falls back to dataUrl via drawImage,
+        // because Konva.Image.toJSON() doesn't keep the bitmap.
+        onCanvasUpdated(null, data);
+    };
+
     const startDrawing = (e) => {
         if(mode === TOOLS.MOVE_SCREEN) {
             const evt = e.evt;
@@ -210,6 +308,15 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
         }
         if(!layers[currentLayerIndex].isVisible) {
             isPaint = false;
+            return;
+        }
+        if (mode === TOOLS.FILL) {
+            const pos = stage.getPointerPosition();
+            isPaint = false;
+            fillAt({
+                x: pos.x + moveOffset.x,
+                y: pos.y + moveOffset.y,
+            });
             return;
         }
         isPaint = true;
@@ -234,15 +341,18 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
 
     const endDrawing = () => {
         if(isPaint && layers[currentLayerIndex].isVisible) {
+            // If the layer has a raster Image (e.g. from flood fill), Konva JSON
+            // can't round-trip the bitmap — flatten to dataUrl only.
+            const hasRaster = currentLayer.children?.some((c) => c.getClassName() === 'Image');
             const data = currentLayer.toDataURL({
                 mimeType: 'image/webp',
-                x: window.innerWidth/2 - 1024/2,
-                quality: 0.1,
-                y: 120,
-                width: 1024,
-                height: 600,
+                x: paperX,
+                quality: hasRaster ? 0.9 : 0.1,
+                y: PAPER_Y,
+                width: PAPER_WIDTH,
+                height: PAPER_HEIGHT,
             });
-            onCanvasUpdated(currentLayer.toJSON(), data)
+            onCanvasUpdated(hasRaster ? null : currentLayer.toJSON(), data);
         }
         isPaint = false;
     }
@@ -254,6 +364,15 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
         document.body.addEventListener('touchmove', draw);
         document.body.addEventListener('mouseup', endDrawing);
         document.body.addEventListener('touchend', endDrawing);
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            document.body.removeEventListener('mousemove', draw);
+            document.body.removeEventListener('touchmove', draw);
+            document.body.removeEventListener('mouseup', endDrawing);
+            document.body.removeEventListener('touchend', endDrawing);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return <div

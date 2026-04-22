@@ -1,7 +1,6 @@
 import * as uuid from 'uuid';
 import { FRAME_TYPES } from './Editor.constants';
 import JSZip from 'jszip';
-import { AnimationGenerator } from 'webp-animation-generator';
 
 export const getEmptyFrame = (type = FRAME_TYPES.FRAME) => ({
   dataUrl: '',
@@ -32,9 +31,9 @@ export const makeMovie = async (layers, layersMap, framesMap) => {
     };
     framesLength = Math.max(framesLength, layersMap[key].frames.length);
   });
-  let i = 0;
-  for (const item of longestLayer.frames) {
+  for (let i = 0; i < longestLayer.frames.length; i++) {
       const images = [];
+      // eslint-disable-next-line no-loop-func
       layers.forEach((key) => {
         console.log('layersMap[key].frames[i]', layersMap[key].frames[i])
         const frameId = layersMap[key].frames[i] || null;
@@ -63,7 +62,6 @@ export const makeMovie = async (layers, layersMap, framesMap) => {
         const frameImage = canvas.toDataURL( 'image/webp', 0.7);
         framesImages.push(frameImage);
       });
-      i = i + 1;
   }
   console.log('framesImages', framesImages);
   return framesImages;

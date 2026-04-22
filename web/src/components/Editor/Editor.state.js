@@ -1,7 +1,6 @@
-import * as uuid from 'uuid';
 import { getEmptyFrame, getEmptyLayer } from './Editor.utils';
 import { atom, selector, selectorFamily } from 'recoil';
-import { TOOLS, TIMELINE_KEYS, EDITOR_KEYS, HISTORY_KEYS, FRAME_TYPES } from './Editor.constants';
+import { TOOLS, TIMELINE_KEYS, EDITOR_KEYS, HISTORY_KEYS } from './Editor.constants';
 
 export const historyAtom = atom({
     key: HISTORY_KEYS.HISTORY,
@@ -261,7 +260,6 @@ export const addLayerSelector = selector({
     key: TIMELINE_KEYS.ADD_LAYER_SELECTOR,
     get: () => {},
     set: ({set, get}) => {
-        const currentLayer = get(currentLayerAtom);
         const frames = get(framesMap);
         const layersObj = get(layersMap);
         const layersArr = get(layersAtom);
