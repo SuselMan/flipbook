@@ -12,6 +12,9 @@ import {CSS} from '@dnd-kit/utilities';
 const LayerFrames = forwardRef((props, ref) => {
     const { id, index, scrollPosition } = props;
     const layer = useEditorStore((s) => s.layersMap[id]);
+    const currentIndex = useEditorStore((s) => s.currentIndex);
+    const currentLayer = useEditorStore((s) => s.currentLayer);
+    const range = useEditorStore((s) => s.framesRange);
     const classes = useStyles();
     const maxLength = useEditorStore((s) => s.longest);
     const rows  = [];
@@ -33,10 +36,28 @@ const LayerFrames = forwardRef((props, ref) => {
     };
 
     for (let i = 0; i < maxLength; i++) {
-        const item = layer.frames[i]
-            ? <Frame key={layer.frames[i]} id={layer.frames[i]} layerId={id} layerIndex={index} frameIndex={i}/>
-            :  <AddFrame key={i} layerId={id} position={i}/>
-        rows.push(item);
+        const frameId = layer.frames[i];
+        if (frameId) {
+            const isSelected = i === currentIndex && id === currentLayer;
+            const isInRange = Boolean(
+                range &&
+                range.from.layerIndex <= index && range.to.layerIndex >= index &&
+                range.from.frameIndex <= i && range.to.frameIndex >= i
+            );
+            rows.push(
+                <Frame
+                    key={frameId}
+                    id={frameId}
+                    layerId={id}
+                    layerIndex={index}
+                    frameIndex={i}
+                    isSelected={isSelected}
+                    isInRange={isInRange}
+                />
+            );
+        } else {
+            rows.push(<AddFrame key={i} layerId={id} position={i}/>);
+        }
     }
 
     return <div  ref={setNodeRef} style={style} {...attributes} handle="true" className={clsx(classes.frames, {[classes.first]: index === 0} )}>

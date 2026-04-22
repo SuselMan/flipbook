@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { saveDraft } from '../modules/db/drafts';
 
-const DEBOUNCE_MS = 800;
+const DEBOUNCE_MS = 30000;
 
 export const useDraftAutosave = (draftId) => {
     const layers = useEditorStore((s) => s.layers);

@@ -1,4 +1,4 @@
-import React, {forwardRef} from 'react';
+import React, {forwardRef, memo} from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStyles } from './Layer.styles';
 import {ReactComponent as ClosedEyeIcon} from '../../../../shared/icons/closed-eye.svg';
@@ -32,4 +32,4 @@ const LayerTools = forwardRef((props, ref) => {
     </div>
 });
 
-export default LayerTools;
+export default memo(LayerTools);

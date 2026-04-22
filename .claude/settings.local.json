@@ -28,7 +28,10 @@
       "Bash(powershell.exe *)",
       "Bash(BROWSER=none CI=true yarn start)",
       "Bash(grep -Ev \"node_modules|build|public|src|.yarn$\")",
-      "Bash(yarn build *)"
+      "Bash(yarn build *)",
+      "Bash(node --max-old-space-size=8192 analyze.js \"Trace-20260422T111951.json/Trace-20260422T111951.json\")",
+      "Bash(node --max-old-space-size=4096 analyze.js \"Trace-20260422T115335.json/Trace-20260422T115335.json\")",
+      "Bash(node --max-old-space-size=4096 analyze.js \"Trace-20260422T120443.json/Trace-20260422T120443.json\")"
     ]
   }
 }
