@@ -2,7 +2,7 @@ import React, {memo, useImperativeHandle, useEffect, forwardRef, useRef} from 'r
 import { useStyles } from './Canvas.styles';
 import clsx from 'clsx';
 import Konva from 'konva';
-import { initialLayer } from "../Editor.state";
+import { initialLayer } from "../../../stores/editorStore";
 import {TOOLS, FINGER_OFFSET_Y, FINGER_OFFSET_X} from "../Editor.constants";
 import { floodFill } from '../../../modules/render/floodFill';
 

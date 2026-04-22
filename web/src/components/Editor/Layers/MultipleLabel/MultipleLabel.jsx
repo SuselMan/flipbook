@@ -20,9 +20,9 @@ const MultipleLabel = (props) => {
     const [slickStep, setSlickStep] = useState(count);
     const [marginValue, setMarginValue] = useState(0);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         setPositionByStep(count);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [count, item.index]);
 
     useEffect(() => {

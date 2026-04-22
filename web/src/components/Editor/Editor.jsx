@@ -37,68 +37,50 @@ import Canvas from "./Canvas/Canvas";
 import Color from './Tools/Color/Color';
 import BrushSize from './Tools/BrushSize/BrushSize';
 import Opacity from './Tools/Opacity/Opacity';
-import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
+import { useEditorStore, selectSlice, shallow } from '../../stores/editorStore';
 import { TOOLS, FINGER_OFFSET_Y, FINGER_OFFSET_X } from './Editor.constants';
 import { renderPreview, packSource, STAGES } from '../../modules/render/render';
 import { publishProject } from '../../modules/API/API';
-import {
-  currentLayerAtom,
-  isPlayAtom,
-  isOnionSkinAtom,
-  onionSkinLeftAtom,
-  onionSkinRightAtom,
-  selectedToolAtom,
-  selectedColorAtom,
-  brushSizeAtom,
-  opacityAtom,
-  isColorPickingAtom,
-  isOpacityPickingAtom,
-  isBrushSizePickingAtom,
-  currentFrameAtom,
-  frameSelector,
-  addLayerSelector,
-  getSliceSelector,
-  nextFrameSelector,
-  currentIndexAtom,
-  deleteFrameSelector,
-  addFrameSelector,
-  layersAtom,
-  layersMap,
-  framesMap,
-  prevFrameSelector,
-  duplicateFrameSelector,
-} from './Editor.state';
 import { useParams } from "react-router-dom";
 
 const Editor = () => {
   const classes = useStyles();
   const { t } = useTranslation();
   const canvasRef = useRef();
-  const [isPlay, setIsPlay] = useRecoilState(isPlayAtom);
-  const [currentFrame] = useRecoilState(currentFrameAtom);
-  const [currentIndex] = useRecoilState(currentIndexAtom);
-  const [slice] = useRecoilState(getSliceSelector);
-  const [currentLayer] = useRecoilState(currentLayerAtom);
-  const [isMultiple, setIsMultiple] = useRecoilState(isOnionSkinAtom);
-  const multipleLeft = useRecoilValue(onionSkinLeftAtom);
-  const multipleRight = useRecoilValue(onionSkinRightAtom);
-  const [tool, setTool] = useRecoilState(selectedToolAtom);
-  const [currentColor, setCurrentColor] = useRecoilState(selectedColorAtom);
-  const [isTooltipOpen, setIsTooltipOpen] = useRecoilState(isColorPickingAtom);
-  const setFrame = useSetRecoilState(frameSelector(currentFrame));
-  const addLayer = useSetRecoilState(addLayerSelector);
-  const nextFrame = useSetRecoilState(nextFrameSelector);
-  const [isBrushTooltipOpen, setIsBrushTooltipOpen] = useRecoilState(isBrushSizePickingAtom);
-  const [isOpacityTooltipOpen, setIsOpacityTooltipOpen] = useRecoilState(isOpacityPickingAtom);
-  const [brushSize, setBrushSize] = useRecoilState(brushSizeAtom);
-  const [opacity, setOpacity] = useRecoilState(opacityAtom);
-  const deleteFrame = useSetRecoilState(deleteFrameSelector);
-  const addFrame = useSetRecoilState(addFrameSelector)
-  const prevFrame = useSetRecoilState(prevFrameSelector);
-  const duplicateFrame = useSetRecoilState(duplicateFrameSelector);
-  const [layers] = useRecoilState(layersAtom);
-  const [layersM] = useRecoilState(layersMap);
-  const [framesM] = useRecoilState(framesMap);
+  const isPlay = useEditorStore((s) => s.isPlay);
+  const setIsPlay = useEditorStore((s) => s.setIsPlay);
+  const currentFrame = useEditorStore((s) => s.currentFrame);
+  const currentIndex = useEditorStore((s) => s.currentIndex);
+  const slice = useEditorStore(selectSlice, shallow);
+  const currentLayer = useEditorStore((s) => s.currentLayer);
+  const isMultiple = useEditorStore((s) => s.isOnionSkin);
+  const setIsMultiple = useEditorStore((s) => s.setIsOnionSkin);
+  const multipleLeft = useEditorStore((s) => s.onionSkinLeft);
+  const multipleRight = useEditorStore((s) => s.onionSkinRight);
+  const tool = useEditorStore((s) => s.selectedTool);
+  const setTool = useEditorStore((s) => s.setSelectedTool);
+  const currentColor = useEditorStore((s) => s.selectedColor);
+  const setCurrentColor = useEditorStore((s) => s.setSelectedColor);
+  const isTooltipOpen = useEditorStore((s) => s.isColorPicking);
+  const setIsTooltipOpen = useEditorStore((s) => s.setIsColorPicking);
+  const setFrame = useEditorStore((s) => s.updateFrame);
+  const addLayer = useEditorStore((s) => s.addLayer);
+  const nextFrame = useEditorStore((s) => s.nextFrame);
+  const isBrushTooltipOpen = useEditorStore((s) => s.isBrushSizePicking);
+  const setIsBrushTooltipOpen = useEditorStore((s) => s.setIsBrushSizePicking);
+  const isOpacityTooltipOpen = useEditorStore((s) => s.isOpacityPicking);
+  const setIsOpacityTooltipOpen = useEditorStore((s) => s.setIsOpacityPicking);
+  const brushSize = useEditorStore((s) => s.brushSize);
+  const setBrushSize = useEditorStore((s) => s.setBrushSize);
+  const opacity = useEditorStore((s) => s.opacity);
+  const setOpacity = useEditorStore((s) => s.setOpacity);
+  const deleteFrame = useEditorStore((s) => s.deleteFrame);
+  const addFrame = useEditorStore((s) => s.addFrame);
+  const prevFrame = useEditorStore((s) => s.prevFrame);
+  const duplicateFrame = useEditorStore((s) => s.duplicateFrame);
+  const layers = useEditorStore((s) => s.layers);
+  const layersM = useEditorStore((s) => s.layersMap);
+  const framesM = useEditorStore((s) => s.framesMap);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [isBrushVisible, setIsBrushVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

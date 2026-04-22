@@ -1,22 +1,21 @@
 import React from 'react';
 import { useStyles } from './Frame.styles';
 import clsx from 'clsx';
-import { frameSelector } from '../../../Editor.state';
-import {
-    useRecoilState,
-    useSetRecoilState,
-} from 'recoil';
-import { currentFrameAtom, currentLayerAtom, currentIndexAtom, createFrameRangeSelector, framesRangeAtom } from '../../../Editor.state';
+import { useEditorStore } from '../../../../../stores/editorStore';
 
 const Frame = (props) => {
     const classes = useStyles();
     const { id, layerId, frameIndex, layerIndex } = props;
-    const [frame] = useRecoilState(frameSelector(id))
-    const [ , setCurrentFrame ] = useRecoilState(currentFrameAtom);
-    const [ currentLayer, setCurrentLayer ] = useRecoilState(currentLayerAtom);
-    const [ currentIndex, setCurrentIndex ] = useRecoilState(currentIndexAtom);
-    const [range, setRange] = useRecoilState(framesRangeAtom);
-    const createRange = useSetRecoilState(createFrameRangeSelector({ frameIndex, layerIndex }));
+    const frame = useEditorStore((s) => s.framesMap[id]);
+    const setCurrentFrame = useEditorStore((s) => s.setCurrentFrame);
+    const currentLayer = useEditorStore((s) => s.currentLayer);
+    const setCurrentLayer = useEditorStore((s) => s.setCurrentLayer);
+    const currentIndex = useEditorStore((s) => s.currentIndex);
+    const setCurrentIndex = useEditorStore((s) => s.setCurrentIndex);
+    const range = useEditorStore((s) => s.framesRange);
+    const setRange = useEditorStore((s) => s.setFramesRange);
+    const createFrameRange = useEditorStore((s) => s.createFrameRange);
+
     const checkIsFrameInRange = () => {
         if(range && range.from.layerIndex <= layerIndex && range.from.frameIndex <= frameIndex ) {
             if(range.to.layerIndex >= layerIndex && range.to.frameIndex >= frameIndex) {
@@ -28,7 +27,7 @@ const Frame = (props) => {
     const isFrameInRange = checkIsFrameInRange();
     const onFrameClick = (e) => {
         if(e.shiftKey) {
-            createRange();
+            createFrameRange({ frameIndex, layerIndex });
             return;
         }
         setRange(null);
@@ -48,9 +47,6 @@ const Frame = (props) => {
                 className={classes.frameImage}
                 src={frame.dataUrl}
             />}
-            {/*<span className={classes.index}>*/}
-            {/*    {frameIndex + 1}*/}
-            {/*</span>*/}
         </div>
     </div>
 }

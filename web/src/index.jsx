@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import App from './App';
 import { ThemeProvider } from 'react-jss';
 import themes from "./configs/theme";
-import { RecoilRoot } from 'recoil';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import './i18n';
@@ -17,11 +16,9 @@ const queryClient = new QueryClient({
 ReactDOM.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RecoilRoot>
-          <ThemeProvider theme={localStorage.theme === 'dark' ? themes.dark : themes.light}>
-            <App />
-          </ThemeProvider>
-      </RecoilRoot>
+      <ThemeProvider theme={localStorage.theme === 'dark' ? themes.dark : themes.light}>
+        <App />
+      </ThemeProvider>
       {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   </React.StrictMode>,

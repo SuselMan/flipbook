@@ -34,13 +34,13 @@
     "react-router-dom": "^5.2.0",
     "react-scripts": "5.0.1",
     "react-usestateref": "^1.0.8",
-    "recoil": "^0.7.6",
     "serve": "^14.0.1",
     "theming": "^3.3.0",
     "tiny-storage-client": "^2.1.4",
     "uuid": "^8.3.2",
     "web-vitals": "^1.0.1",
-    "webp-animation-generator": "^0.1.0"
+    "webp-animation-generator": "^0.1.0",
+    "zustand": "^4.5"
   },
   "scripts": {
     "start": "react-scripts start",

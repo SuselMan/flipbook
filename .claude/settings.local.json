@@ -27,7 +27,8 @@
       "Bash(tasklist //FI \"PID eq 10920\")",
       "Bash(powershell.exe *)",
       "Bash(BROWSER=none CI=true yarn start)",
-      "Bash(grep -Ev \"node_modules|build|public|src|.yarn$\")"
+      "Bash(grep -Ev \"node_modules|build|public|src|.yarn$\")",
+      "Bash(yarn build *)"
     ]
   }
 }

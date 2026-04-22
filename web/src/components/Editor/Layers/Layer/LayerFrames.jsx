@@ -3,11 +3,7 @@ import clsx from 'clsx';
 import Frame from './Frame/Frame';
 import AddFrame from './Frame/AddFrame';
 import { useStyles } from './Layer.styles';
-import { layerSelector, longestLayer } from '../../Editor.state';
-import {
-    useRecoilState,
-    useRecoilValue,
-} from 'recoil';
+import { useEditorStore } from '../../../../stores/editorStore';
 import LayerTools from "./LayerTools";
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
@@ -15,9 +11,9 @@ import {CSS} from '@dnd-kit/utilities';
 // TODO: Check if we need this ref;
 const LayerFrames = forwardRef((props, ref) => {
     const { id, index, scrollPosition } = props;
-    const [ layer ] = useRecoilState(layerSelector(id))
+    const layer = useEditorStore((s) => s.layersMap[id]);
     const classes = useStyles();
-    const maxLength = useRecoilValue(longestLayer);
+    const maxLength = useEditorStore((s) => s.longest);
     const rows  = [];
     const {
         attributes,
@@ -27,6 +23,8 @@ const LayerFrames = forwardRef((props, ref) => {
         transform,
         transition,
     } = useSortable({id: props.id});
+
+    if (!layer) return null;
 
     const style = {
         transform: CSS.Transform.toString(transform),

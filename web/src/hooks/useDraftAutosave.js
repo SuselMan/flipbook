@@ -1,14 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { useRecoilValue } from 'recoil';
-import { layersAtom, layersMap, framesMap } from '../components/Editor/Editor.state';
+import { useEditorStore } from '../stores/editorStore';
 import { saveDraft } from '../modules/db/drafts';
 
 const DEBOUNCE_MS = 800;
 
 export const useDraftAutosave = (draftId) => {
-    const layers = useRecoilValue(layersAtom);
-    const layersM = useRecoilValue(layersMap);
-    const framesM = useRecoilValue(framesMap);
+    const layers = useEditorStore((s) => s.layers);
+    const layersM = useEditorStore((s) => s.layersMap);
+    const framesM = useEditorStore((s) => s.framesMap);
 
     const timerRef = useRef();
     const firstRun = useRef(true);

@@ -1,11 +1,7 @@
 import React, {useState, forwardRef, useRef} from 'react';
 import LayerFrames from './Layer/LayerFrames';
 import { useStyles } from './Layers.styles';
-import {
-    useRecoilState,
-    useRecoilValue,
-} from 'recoil';
-import {currentIndexAtom, layersAtom, isOnionSkinAtom, onionSkinLeftAtom, onionSkinRightAtom, longestLayer, isPlayAtom} from '../Editor.state';
+import { useEditorStore } from '../../../stores/editorStore';
 import { FRAME_MARGIN, FRAME_WIDTH, LAYERS_TOOLS_WIDTH } from "../Editor.styles";
 import MultipleLabel from './MultipleLabel/MultipleLabel';
 import {
@@ -28,13 +24,16 @@ import clsx from 'clsx';
 
 const Layers = forwardRef((props, ref) => {
     const classes = useStyles();
-    const [ layers, setLayers ] = useRecoilState(layersAtom);
-    const currentIndex = useRecoilValue(currentIndexAtom);
-    const framesLength = useRecoilValue(longestLayer);
-    const [multipleRight, setMultipleRight] = useRecoilState(onionSkinRightAtom);
-    const [multipleLeft, setMultipleLeft] = useRecoilState(onionSkinLeftAtom);
-    const isOnionSkin = useRecoilValue(isOnionSkinAtom);
-    const isPlay = useRecoilValue(isPlayAtom);
+    const layers = useEditorStore((s) => s.layers);
+    const setLayers = useEditorStore((s) => s.setLayers);
+    const currentIndex = useEditorStore((s) => s.currentIndex);
+    const framesLength = useEditorStore((s) => s.longest);
+    const multipleRight = useEditorStore((s) => s.onionSkinRight);
+    const setMultipleRight = useEditorStore((s) => s.setOnionSkinRight);
+    const multipleLeft = useEditorStore((s) => s.onionSkinLeft);
+    const setMultipleLeft = useEditorStore((s) => s.setOnionSkinLeft);
+    const isOnionSkin = useEditorStore((s) => s.isOnionSkin);
+    const isPlay = useEditorStore((s) => s.isPlay);
     const [scrollPosition, setScrollPosition] = useState(0);
     const scrollRef = useRef();
     const sensors = useSensors(
