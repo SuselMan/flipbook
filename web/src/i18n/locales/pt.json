@@ -72,7 +72,11 @@
       "redo": "Refazer",
       "moveCanvas": "Mover tela",
       "zoomIn": "Aproximar",
-      "zoomOut": "Afastar"
+      "zoomOut": "Afastar",
+      "firstFrame": "Primeiro quadro",
+      "previousFrame": "Quadro anterior",
+      "nextFrame": "Próximo quadro",
+      "lastFrame": "Último quadro"
     },
     "publishTitle": "Publicar projeto",
     "projectName": "Nome do projeto*",
@@ -173,6 +177,8 @@
       "deleteFrame": "Excluir quadro",
       "nextFrame": "Próximo quadro",
       "previousFrame": "Quadro anterior",
+      "firstFrame": "Primeiro quadro",
+      "lastFrame": "Último quadro",
       "zoomIn": "Aproximar",
       "zoomOut": "Afastar",
       "zoomReset": "Redefinir zoom"

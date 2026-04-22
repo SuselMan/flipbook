@@ -72,7 +72,11 @@
       "redo": "Rehacer",
       "moveCanvas": "Mover lienzo",
       "zoomIn": "Acercar",
-      "zoomOut": "Alejar"
+      "zoomOut": "Alejar",
+      "firstFrame": "Primer cuadro",
+      "previousFrame": "Cuadro anterior",
+      "nextFrame": "Siguiente cuadro",
+      "lastFrame": "Último cuadro"
     },
     "publishTitle": "Publicar proyecto",
     "projectName": "Nombre del proyecto*",
@@ -173,6 +177,8 @@
       "deleteFrame": "Eliminar cuadro",
       "nextFrame": "Siguiente cuadro",
       "previousFrame": "Cuadro anterior",
+      "firstFrame": "Primer cuadro",
+      "lastFrame": "Último cuadro",
       "zoomIn": "Acercar",
       "zoomOut": "Alejar",
       "zoomReset": "Restablecer zoom"

@@ -208,6 +208,19 @@ export const useEditorStore = create((set, get) => ({
     set({ currentIndex: prevIndex, currentFrame: newFrame });
   },
 
+  firstFrame: () => {
+    const { currentLayer, layersMap } = get();
+    const newFrame = layersMap[currentLayer]?.frames?.[0];
+    set({ currentIndex: 0, currentFrame: newFrame });
+  },
+
+  lastFrame: () => {
+    const { longest, currentLayer, layersMap } = get();
+    const lastIndex = Math.max(0, longest - 1);
+    const newFrame = layersMap[currentLayer]?.frames?.[lastIndex];
+    set({ currentIndex: lastIndex, currentFrame: newFrame });
+  },
+
   createFrameRange: ({ layerIndex, frameIndex }) => {
     const { currentIndex, currentLayer, layers } = get();
     const currentLayerIndex = layers.findIndex((id) => id === currentLayer);
@@ -316,15 +329,15 @@ export const useEditorStore = create((set, get) => ({
   resetHistory: () => set({ history: { past: [], future: [] } }),
 }));
 
-// Derived selector: compose current frame slice across visible layers.
+// Derived selector: compose a frame slice across visible layers at a given index.
 // Returns a new array on every call — callers must use `shallow` equality.
-export const selectSlice = (s) => {
-  const { currentIndex, layers, framesMap, layersMap } = s;
-  const slice = layers
+export const selectSliceAt = (s, index) => {
+  const { layers, framesMap, layersMap } = s;
+  return layers
     .map((key) => {
       const layer = layersMap[key];
       if (!layer) return null;
-      const frameId = layer.frames?.[currentIndex];
+      const frameId = layer.frames?.[index];
       const frame = frameId ? framesMap[frameId] : null;
       return {
         id: key,
@@ -333,8 +346,10 @@ export const selectSlice = (s) => {
         isVisible: layer.isVisible,
       };
     })
-    .filter(Boolean);
-  return slice.reverse();
+    .filter(Boolean)
+    .reverse();
 };
+
+export const selectSlice = (s) => selectSliceAt(s, s.currentIndex);
 
 export { shallow };

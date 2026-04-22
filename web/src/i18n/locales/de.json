@@ -72,7 +72,11 @@
       "redo": "Wiederherstellen",
       "moveCanvas": "Leinwand verschieben",
       "zoomIn": "Vergrößern",
-      "zoomOut": "Verkleinern"
+      "zoomOut": "Verkleinern",
+      "firstFrame": "Erstes Frame",
+      "previousFrame": "Vorheriges Frame",
+      "nextFrame": "Nächstes Frame",
+      "lastFrame": "Letztes Frame"
     },
     "publishTitle": "Projekt veröffentlichen",
     "projectName": "Projektname*",
@@ -173,6 +177,8 @@
       "deleteFrame": "Frame löschen",
       "nextFrame": "Nächstes Frame",
       "previousFrame": "Vorheriges Frame",
+      "firstFrame": "Erstes Frame",
+      "lastFrame": "Letztes Frame",
       "zoomIn": "Vergrößern",
       "zoomOut": "Verkleinern",
       "zoomReset": "Zoom zurücksetzen"

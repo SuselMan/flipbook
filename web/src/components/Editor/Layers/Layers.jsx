@@ -1,4 +1,4 @@
-import React, {useState, forwardRef, useRef} from 'react';
+import React, {useState, forwardRef, useRef, memo} from 'react';
 import LayerFrames from './Layer/LayerFrames';
 import { useStyles } from './Layers.styles';
 import { useEditorStore } from '../../../stores/editorStore';
@@ -102,4 +102,4 @@ const Layers = forwardRef((props, ref) => {
     </div>
 });
 
-export default Layers;
+export default memo(Layers);

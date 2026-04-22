@@ -19,6 +19,10 @@ import { ReactComponent as AddLayerIcon } from '../../shared/icons/add-layer.svg
 import { ReactComponent as MoveIcon } from '../../shared/icons/move-icon.svg';
 import { ReactComponent as ZoomInIcon } from '../../shared/icons/zoomin-icon.svg';
 import { ReactComponent as ZoomOutIcon } from '../../shared/icons/zoomout-icon.svg';
+import { ReactComponent as ArrowFirstIcon } from '../../shared/icons/arrow-first.svg';
+import { ReactComponent as ArrowBackIcon } from '../../shared/icons/arrow-back.svg';
+import { ReactComponent as ArrowForwardIcon } from '../../shared/icons/arrow-forward.svg';
+import { ReactComponent as ArrowLastIcon } from '../../shared/icons/arrow-last.svg';
 import { ReactComponent as PreloaderIcon } from "../../shared/icons/preloader.svg";
 import BrushCursor from '../shared/BrushCursor/BrushCursor';
 import BaseButton from "../shared/BaseButton/BaseButton";
@@ -38,11 +42,13 @@ import Canvas from "./Canvas/Canvas";
 import Color from './Tools/Color/Color';
 import BrushSize from './Tools/BrushSize/BrushSize';
 import Opacity from './Tools/Opacity/Opacity';
-import { useEditorStore, selectSlice, shallow } from '../../stores/editorStore';
+import { useEditorStore, selectSlice, selectSliceAt, shallow } from '../../stores/editorStore';
 import { TOOLS, FINGER_OFFSET_Y, FINGER_OFFSET_X } from './Editor.constants';
 import { renderPreview, packSource, STAGES } from '../../modules/render/render';
 import { publishProject } from '../../modules/API/API';
 import { useParams } from "react-router-dom";
+import PlayCanvas from './PlayCanvas/PlayCanvas';
+import { startPrefetchWorker, invalidateAll as invalidatePlayCache } from '../../modules/playEngine/playEngine';
 
 const Editor = () => {
   const classes = useStyles();
@@ -78,6 +84,8 @@ const Editor = () => {
   const deleteFrame = useEditorStore((s) => s.deleteFrame);
   const addFrame = useEditorStore((s) => s.addFrame);
   const prevFrame = useEditorStore((s) => s.prevFrame);
+  const firstFrame = useEditorStore((s) => s.firstFrame);
+  const lastFrame = useEditorStore((s) => s.lastFrame);
   const duplicateFrame = useEditorStore((s) => s.duplicateFrame);
   const layers = useEditorStore((s) => s.layers);
   const layersM = useEditorStore((s) => s.layersMap);
@@ -113,7 +121,13 @@ const Editor = () => {
   }, [tool]);
 
   useEffect(() => {
+    const el = canvasRef.current?.elementRef?.();
+    if (el) el.style.visibility = isPlay ? 'hidden' : 'visible';
+  }, [isPlay]);
+
+  useEffect(() => {
     if (!canvasRef.current) return;
+    if (isPlay) return; // play mode: PlayCanvas handles rendering, skip Konva
     if (!currentFrame) {
       canvasRef.current.clearScene(true);
       return;
@@ -155,6 +169,12 @@ const Editor = () => {
       resetPlayMetrics();
       return;
     }
+    // Rebuild play cache on each enter — guarantees we see latest edits.
+    invalidatePlayCache();
+    const cancelPrefetch = startPrefetchWorker(
+      useEditorStore.getState,
+      selectSliceAt,
+    );
     const FRAME_MS = 100;
     let rafId;
     let lastTs = performance.now();
@@ -167,7 +187,10 @@ const Editor = () => {
       rafId = requestAnimationFrame(tick);
     };
     rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+    return () => {
+      cancelAnimationFrame(rafId);
+      cancelPrefetch();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlay]);
 
@@ -356,6 +379,8 @@ const Editor = () => {
       [SHORTCUTS.FILL_TOOL]: () => setTool(TOOLS.FILL),
       [SHORTCUTS.NEXT_FRAME]: () => nextFrame(),
       [SHORTCUTS.PREVIOUS_FRAME]: () => prevFrame(),
+      [SHORTCUTS.FIRST_FRAME]: () => firstFrame(),
+      [SHORTCUTS.LAST_FRAME]: () => lastFrame(),
       [SHORTCUTS.REDUCE_BRUSH]: () => setBrush(Math.max(1, brushSize - 1)),
       [SHORTCUTS.INCREASE_BRUSH]: () => setBrush(Math.min(100, brushSize + 1)),
       [SHORTCUTS.ZOOM_IN]: () => zoomIn(),
@@ -434,12 +459,13 @@ const Editor = () => {
           <RoundButton onClick={zoomOut}
                        title={tooltip(t('editor.tools.zoomOut'), SHORTCUTS.ZOOM_OUT)}><ZoomOutIcon/></RoundButton>
         </div>
-        <BrushCursor x={cursorPosition.x} y={cursorPosition.y} size={brushSize} isVisible={isBrushVisible}/>
+        <BrushCursor x={cursorPosition.x} y={cursorPosition.y} size={brushSize} isVisible={isBrushVisible && !isPlay}/>
         <Canvas
           onCanvasUpdated={(json, data) => onCanvasUpdated(json, data)}
           tool={tool}
           ref={canvasRef}
         />
+        {isPlay && <PlayCanvas/>}
         <div className={clsx(classes.tools, classes.rightTools)}>
           <RoundButton
             title={tooltip(t('editor.tools.brush'), SHORTCUTS.BRUSH_TOOL)}
@@ -485,6 +511,8 @@ const Editor = () => {
         </div>
       </div>
       <div className={classes.bottomTools}>
+        <RoundButton title={tooltip(t('editor.tools.firstFrame'), SHORTCUTS.FIRST_FRAME)} onClick={firstFrame}><ArrowFirstIcon/></RoundButton>
+        <RoundButton title={tooltip(t('editor.tools.previousFrame'), SHORTCUTS.PREVIOUS_FRAME)} onClick={prevFrame}><ArrowBackIcon/></RoundButton>
         <RoundButton title={tooltip(t('editor.tools.addFrame'), SHORTCUTS.ADD_FRAME)} onClick={handleAddFrame}>+</RoundButton>
         <RoundButton title={tooltip(t('editor.tools.addLayer'), SHORTCUTS.ADD_LAYER)} onClick={handleAddLayer}><AddLayerIcon/></RoundButton>
         <RoundButton title={tooltip(t('editor.tools.duplicateFrame'), SHORTCUTS.DUPLICATE_FRAME)} onClick={handleDuplicateFrame}>
@@ -498,6 +526,8 @@ const Editor = () => {
           <MultipleIcon/>
         </RoundButton>
         <RoundButton title={tooltip(t('editor.tools.clear'), SHORTCUTS.CLEAR_FRAME)} onClick={onClearFrame}><ClearIcon/></RoundButton>
+        <RoundButton title={tooltip(t('editor.tools.nextFrame'), SHORTCUTS.NEXT_FRAME)} onClick={nextFrame}><ArrowForwardIcon/></RoundButton>
+        <RoundButton title={tooltip(t('editor.tools.lastFrame'), SHORTCUTS.LAST_FRAME)} onClick={lastFrame}><ArrowLastIcon/></RoundButton>
       </div>
       <Layers/>
     </>}

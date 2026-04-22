@@ -72,7 +72,11 @@
       "redo": "Redo",
       "moveCanvas": "Move canvas",
       "zoomIn": "Zoom in",
-      "zoomOut": "Zoom out"
+      "zoomOut": "Zoom out",
+      "firstFrame": "First frame",
+      "previousFrame": "Previous frame",
+      "nextFrame": "Next frame",
+      "lastFrame": "Last frame"
     },
     "publishTitle": "Publish Project",
     "projectName": "Project Name*",
@@ -173,6 +177,8 @@
       "deleteFrame": "Delete frame",
       "nextFrame": "Next frame",
       "previousFrame": "Previous frame",
+      "firstFrame": "First frame",
+      "lastFrame": "Last frame",
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
       "zoomReset": "Reset zoom"

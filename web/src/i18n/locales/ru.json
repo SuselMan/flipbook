@@ -72,7 +72,11 @@
       "redo": "Повторить",
       "moveCanvas": "Переместить холст",
       "zoomIn": "Приблизить",
-      "zoomOut": "Отдалить"
+      "zoomOut": "Отдалить",
+      "firstFrame": "Первый кадр",
+      "previousFrame": "Предыдущий кадр",
+      "nextFrame": "Следующий кадр",
+      "lastFrame": "Последний кадр"
     },
     "publishTitle": "Публикация проекта",
     "projectName": "Название*",
@@ -175,6 +179,8 @@
       "deleteFrame": "Удалить кадр",
       "nextFrame": "Следующий кадр",
       "previousFrame": "Предыдущий кадр",
+      "firstFrame": "Первый кадр",
+      "lastFrame": "Последний кадр",
       "zoomIn": "Приблизить",
       "zoomOut": "Отдалить",
       "zoomReset": "Сброс зума"

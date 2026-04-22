@@ -3,6 +3,7 @@ import { useStyles } from './Canvas.styles';
 import clsx from 'clsx';
 import Konva from 'konva';
 import { initialLayer } from "../../../stores/editorStore";
+import { brushMoveStart, brushDrawEnd } from "../../../modules/metrics/brushMetric";
 import {TOOLS, FINGER_OFFSET_Y, FINGER_OFFSET_X} from "../Editor.constants";
 import { floodFill } from '../../../modules/render/floodFill';
 
@@ -251,6 +252,7 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
             }
             // prevent scrolling on touch devices
             evt?.preventDefault();
+            const brushCtx = evt ? brushMoveStart(evt.timeStamp) : null;
             const rect = document.querySelector(`#${DRAW_CONTAINER_ID}`).getBoundingClientRect();
             const pos = evt ? {
                 x: x + moveOffset.x - rect.left,
@@ -259,6 +261,7 @@ const Canvas = forwardRef(({  onCanvasUpdated, dataUrl, currentFrameID }, ref) =
             var newPoints = lastLine.points().concat([pos.x + FINGER_OFFSET_X, pos.y - FINGER_OFFSET_Y]);
             lastLine.points(newPoints);
             currentLayer.batchDraw();
+            if (brushCtx) brushDrawEnd(brushCtx);
         }
     }
 
